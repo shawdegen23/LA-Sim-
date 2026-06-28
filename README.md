@@ -228,3 +228,15 @@ Governing is now a simulation with consequences, not a menu of one-off buttons.
 
 See `LA_RESEARCH_V3.md` for the sourced data and design behind the engine.
 
+---
+
+## Governing Mode v4 — Governing, deeper
+
+v4 doubles down on the *job* of governing LA.
+
+- **Deal-making engine.** The whip board is now a negotiating table. Each council member has an **ask** (a district project, an earmark, your backing for their bill); grant it and they **owe you a reliable vote**. Attach **earmarks** to a specific bill to buy a swing vote, **amend** bills to shift who supports them (add tenant protections, carve out single-family zones, require a project-labor agreement…), and **lobby the Council President** to ease committee friction.
+- **Fiscal depth.** Issue **bonds** (capital now, 20 years of debt service), watch **pension obligations** rise and squeeze the budget, lose revenue when **grants get frozen**, and read a **3-year reserve forecast** of your trajectory — on top of the real-dollar revenue/spending budget.
+- **Issue command centers.** A new **Issues** tab with four working boards: **Homelessness** (Inside Safe ops, CARE+ sweeps, County/LAHSA negotiation), **Housing & land use** (RHNA pace, Housing-Element compliance, and **development projects that land on your desk** to approve / condition / deny — councilmanic prerogative in action), **Public safety** (LAPD hiring classes, unarmed response, oversight reform), and **Labor relations** (MOU bargaining with a labor-peace meter and strike risk).
+
+All grounded in `LA_RESEARCH_V3.md` and tested end-to-end across Mayor and Councilmember play.
+
