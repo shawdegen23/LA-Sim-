@@ -6062,6 +6062,9 @@ function govNewState(){
     activeTab:"dashboard",
     flags:{ tookDeveloperMoney:false, probeOpen:false, probeFired:false, cd4vacant:false },
     legacy:{ lawsPassed:0, crisesHandled:0, scandalsSurvived:0, confirmations:0, measuresPassed:0 },
+    city:{ homelessUnsheltered:27000, homelessSheltered:16700, homesBuilt:0, homesAffordable:0, housingPipeline:0, lapdSworn:8620, crimeIndex:46,
+           hist:{ homeless:[43700], homes:[0], lapd:[8620], crime:[46] } },
+    pipelines:[], pendingConsequences:[],
     pendingGovEvent:null, log:[], fileSeq:26000,
     reelectionResolved:false, reelectionResult:null,
   };
@@ -6077,6 +6080,10 @@ function govEnsure(){
   const baseAp=(gov.office==="mayor"&&gov.mayorWho==="raman")?5:4; if(!gov.apMax||gov.apMax<baseAp) gov.apMax=baseAp;
   if(gov.capRegenBonus===undefined) gov.capRegenBonus=(gov.office==="mayor"&&gov.mayorWho==="bass")?2:0;
   if(gov.cd4Appointee===undefined) gov.cd4Appointee=null;
+  if(!gov.city){ gov.city={ homelessUnsheltered:27000, homelessSheltered:16700, homesBuilt:0, homesAffordable:0, housingPipeline:0, lapdSworn:8620, crimeIndex:46, hist:{ homeless:[43700], homes:[0], lapd:[8620], crime:[46] } }; }
+  if(!gov.city.hist) gov.city.hist={ homeless:[43700], homes:[0], lapd:[8620], crime:[46] };
+  if(!gov.pipelines) gov.pipelines=[];
+  if(!gov.pendingConsequences) gov.pendingConsequences=[];
   if(!gov.traits||!gov.traits.length){ gov.traits=(gov.office==="mayor"&&gov.mayorWho==="raman")?["Grassroots energy (+1 action point/turn)","Progressive council bloc starts warmer"]:(gov.office==="mayor"&&gov.mayorWho==="bass")?["Institutional clout (+2 capital/turn)","Establishment council starts warmer"]:(gov.office==="council"?["Councilmanic prerogative in "+gov.district]:[]); }
 }
 function govLog(msg){ G.gov.log.unshift({ t:G.gov.turn, d:govDateStr(G.gov.turn), msg }); if (G.gov.log.length>140) G.gov.log.pop(); }
@@ -6233,7 +6240,7 @@ function govFloorVote(billId){
 function govEnact(b, yes, overrode){
   G.gov.passedLaws.push({ billId:b.id, title:b.title, turn:G.gov.turn, yes, overrode:!!overrode });
   G.gov.legacy.lawsPassed++;
-  applySeg(b.seg,1); applyDept(b.dept,1); G.gov.capital=Math.min(100,G.gov.capital+4);
+  applySeg(b.seg,1); applyDept(b.dept,1); G.gov.capital=Math.min(100,G.gov.capital+4); govPolicyEffect(b.id);
   govLog("✔ ENACTED: “"+b.title+"” ("+yes+"/15"+(overrode?", override":"")+"). Signed into law.");
 }
 function govMayorVeto(b, yes){
@@ -6348,6 +6355,8 @@ function govAdvanceTurn(){
   if (gov.pendingGovEvent){ govLog("Resolve the current situation first."); render(); return; }
   // probe trigger
   if (gov.flags.tookDeveloperMoney && !gov.flags.probeFired && Math.random()<0.20){ gov.flags.probeFired=true; gov.pendingGovEvent=govProbeStage("probe1"); render(); return; }
+  const dueC = gov.pendingConsequences && gov.pendingConsequences.find(x=>x.turn<=gov.turn);
+  if (dueC){ gov.pendingConsequences=gov.pendingConsequences.filter(y=>y!==dueC); gov.pendingGovEvent=govConsequenceEvent(dueC.type); render(); return; }
   // prerogative item for council players
   if (gov.office==="council" && Math.random()<0.10){ gov.pendingGovEvent=GOV_PROEROG; render(); return; }
   if (Math.random()<0.65){ const ev=govPickEvent(); if(ev){ gov.pendingGovEvent=ev; render(); return; } }
@@ -6367,6 +6376,7 @@ function govApplyEff(eff){
 function govResolveEvent(idx){
   const gov=G.gov; const ev=gov.pendingGovEvent; if(!ev) return; const ch=ev.choices[idx];
   govApplyEff(ch.eff);
+  if(ch.pipe==="cut"){ G.gov.pipelines.forEach(p=>{ if(p.kind==="housing") p.turnsLeft=Math.max(0,Math.round(p.turnsLeft/2)); }); }
   if (ev.prerog) gov.prerogItems++;
   // probe chain
   if (ev.id && ev.id.indexOf("probe")===0){
@@ -6396,6 +6406,7 @@ function govEndTurnTicks(){
   govRecalcOverall();
   gov.turn++; gov.ap=gov.apMax;
   gov.approvalHistory.push({ turn:gov.turn, v:gov.approval.overall }); if(gov.approvalHistory.length>120) gov.approvalHistory.shift();
+  govCityTick();
   // pending confirmation auto-resolves if the 45-day (~3 turn) window lapses
   if (gov.pendingConfirm && gov.turn-gov.pendingConfirm.sentTurn>=3){ govLog("The 45-day confirmation window lapsed — resolving by default."); govResolveConfirm(true); }
   // budget season (annual, ~April)
@@ -6431,6 +6442,95 @@ function govResolveReelection(){
 // ============================================================================
 // UI
 // ============================================================================
+// ============================================================================
+// CITY-STATE ENGINE (v3): policies feed lagged, contingent, fallible pipelines
+// ============================================================================
+function govStartPipeline(p){ const ex=G.gov.pipelines.find(x=>x.id===p.id); if(ex){ ex.turnsLeft=Math.max(ex.turnsLeft,p.turnsLeft); ex.mag=Math.max(ex.mag,p.mag); } else G.gov.pipelines.push(p); }
+function govPlantConsequence(turnsAhead,type){ G.gov.pendingConsequences.push({ turn:G.gov.turn+turnsAhead, type }); }
+function govPolicyEffect(billId){
+  const gov=G.gov, c=gov.city; if(!c) return;
+  switch(billId){
+    case "insidesafe": govStartPipeline({id:"insidesafe",label:"Inside Safe",kind:"shelter",mag:130,turnsLeft:20,fundRisk:0.10}); govPlantConsequence(6,"insidesafe_audit"); break;
+    case "sb79embrace": govStartPipeline({id:"sb79",label:"SB 79 upzoning",kind:"housing",mag:520,affShare:0.45,turnsLeft:20,fundRisk:0.05}); c.housingPipeline+=5200; govPlantConsequence(5,"ed1_court"); break;
+    case "wildfirerebuild": govStartPipeline({id:"rebuild",label:"Palisades rebuild",kind:"housing",mag:240,affShare:0.1,turnsLeft:16}); c.housingPipeline+=2000; break;
+    case "rsoprotect": govStartPipeline({id:"rso",label:"Rent stabilization",kind:"protect",mag:90,turnsLeft:36}); break;
+    case "lapdhiring": govStartPipeline({id:"lapd",label:"LAPD hiring class",kind:"police",mag:35,turnsLeft:18,fundRisk:0.12}); break;
+    case "careplus": govStartPipeline({id:"care",label:"CARE+ sweeps",kind:"sweep",mag:220,turnsLeft:12}); break;
+    case "unarmedresponse": govStartPipeline({id:"unarmed",label:"Unarmed response",kind:"safety",mag:1,turnsLeft:24}); break;
+    case "sb79delay": c.housingPipeline=Math.max(0,c.housingPipeline-1500); break;
+    case "austerity": gov.reserve=Math.min(20,gov.reserve+3); break;
+    default: break;
+  }
+}
+function govCityTick(){
+  const gov=G.gov, c=gov.city, dh=gov.deptHealth; if(!c) return;
+  let policeAdds=0, shelterMoves=0, housingDone=0, housingAff=0, inflowReduce=0, sweepReduce=0, safetyProg=0;
+  gov.pipelines.forEach(p=>{ if(p.turnsLeft<=0) return;
+    if(p.fundRisk && Math.random()<p.fundRisk){ p.turnsLeft=Math.max(0,p.turnsLeft-2); govLog("\u26a0 Funding for "+p.label+" was cut by another government \u2014 progress slowed."); }
+    if(p.kind==="police") policeAdds+=p.mag;
+    else if(p.kind==="shelter") shelterMoves+=p.mag;
+    else if(p.kind==="housing"){ housingDone+=p.mag; housingAff+=Math.round(p.mag*(p.affShare||0.5)); }
+    else if(p.kind==="protect") inflowReduce+=p.mag;
+    else if(p.kind==="sweep") sweepReduce+=p.mag;
+    else if(p.kind==="safety") safetyProg+=p.mag;
+    p.turnsLeft--; });
+  gov.pipelines=gov.pipelines.filter(p=>p.turnsLeft>0);
+  c.lapdSworn=Math.max(7000, c.lapdSworn-15+policeAdds);
+  const planMul=0.6+((dh.planning||50)/100);
+  const built=Math.round(housingDone*planMul);
+  c.homesBuilt+=built; c.homesAffordable+=Math.round(housingAff*planMul); c.housingPipeline=Math.max(0,c.housingPipeline-built);
+  const rentPressure=(60-(dh.housing||45))/40;
+  let inflow=Math.max(0, 220+Math.round(rentPressure*120)-inflowReduce-Math.round(built*0.3));
+  let exits=120+Math.round(((dh.homeless||40)/100)*120);
+  const moved=Math.max(0, Math.min(c.homelessUnsheltered, shelterMoves));
+  const returns=Math.round(moved*0.40);
+  c.homelessUnsheltered=Math.max(0, c.homelessUnsheltered+inflow-exits-moved-sweepReduce+returns);
+  c.homelessSheltered=Math.max(0, c.homelessSheltered+moved-returns-Math.round(exits*0.3));
+  const copFactor=(8600-c.lapdSworn)/200;
+  const homelessFactor=(c.homelessUnsheltered-27000)/3000;
+  const safetyHealth=(50-(dh.police||50))/20;
+  let crimeTarget=46+copFactor+homelessFactor+safetyHealth-safetyProg*1.5;
+  c.crimeIndex=Math.max(10,Math.min(95, Math.round(c.crimeIndex+(crimeTarget-c.crimeIndex)*0.2)));
+  const tot=c.homelessUnsheltered+c.homelessSheltered;
+  c.hist.homeless.push(tot); c.hist.homes.push(c.homesBuilt); c.hist.lapd.push(c.lapdSworn); c.hist.crime.push(c.crimeIndex);
+  ["homeless","homes","lapd","crime"].forEach(k=>{ if(c.hist[k].length>120) c.hist[k].shift(); });
+  if(built>0) bumpApproval({renters:+1});
+  if(moved>returns) bumpApproval({homeowners:+1,overall:+1});
+  if(c.crimeIndex>62) bumpApproval({publicSafety:-1,homeowners:-1});
+  if(tot>46000) bumpApproval({overall:-1});
+}
+function govConsequenceEvent(type){
+  if(type==="ed1_court") return { id:"ed1_court", title:"Court strikes part of your housing order",
+    body:"A judge rules your fast-track upzoning violated state environmental review \u2014 echoing ED1's real court losses. Your housing pipeline is at risk.",
+    choices:[ {label:"Appeal and keep building (\u22128 capital)", eff:{cap:-8,seg:{renters:+2,homeowners:-2}}},
+              {label:"Comply \u2014 scale the program back", eff:{seg:{homeowners:+3,renters:-3}}, pipe:"cut"} ]};
+  if(type==="insidesafe_audit") return { id:"insidesafe_audit", title:"Controller audit: homelessness funds unspent",
+    body:"An audit finds hundreds of millions of your homelessness budget unspent and untracked \u2014 the real Inside Safe audit problem.",
+    choices:[ {label:"Overhaul management & spend it down (\u22126 capital)", eff:{cap:-6,scandal:-8,seg:{progressives:+2}}},
+              {label:"Dispute the audit", eff:{scandal:+8,seg:{overall:-3}}} ]};
+  return { id:"consq", title:"Implementation snag", body:"A program hits a bureaucratic delay.", choices:[{label:"Manage it",eff:{cap:-3}}] };
+}
+function govSpark(series,color){ if(!series||series.length<2) return ""; const W=150,H=34,p=3; const min=Math.min.apply(null,series),max=Math.max.apply(null,series); const rng=(max-min)||1; const x=i=>p+i*(W-2*p)/(series.length-1); const y=v=>H-p-((v-min)/rng)*(H-2*p); let d=series.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" "); return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}"><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/></svg>`; }
+function govMetricCard(label,value,series,goodDown){
+  let arrow="",col="var(--muted)";
+  if(series&&series.length>3){ const a=series[Math.max(0,series.length-9)],bb=series[series.length-1]; const up=bb>a; const good=goodDown?!up:up; arrow=up?"\u25b2":(bb<a?"\u25bc":"\u2022"); col=good?"var(--good)":"var(--bad)"; }
+  return `<div class="panel" style="padding:10px"><div class="small" style="color:var(--muted)">${label}</div><div style="font-size:20px;font-weight:700">${value} <span style="font-size:12px;color:${col}">${arrow}</span></div>${govSpark(series,col)}</div>`;
+}
+function govViewCityOutcomes(){
+  const c=G.gov.city; if(!c) return "";
+  const tot=c.homelessUnsheltered+c.homelessSheltered;
+  return `<div class="panel" style="margin:12px 0"><h3>City outcomes \u2014 what your decisions are actually doing</h3>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      ${govMetricCard("Homelessness (total)", tot.toLocaleString(), c.hist.homeless, true)}
+      ${govMetricCard("Unsheltered", c.homelessUnsheltered.toLocaleString(), null, true)}
+      ${govMetricCard("Crime index", c.crimeIndex, c.hist.crime, true)}
+      ${govMetricCard("Affordable homes built", c.homesAffordable.toLocaleString(), c.hist.homes, false)}
+      ${govMetricCard("Homes built (total)", c.homesBuilt.toLocaleString(), c.hist.homes, false)}
+      ${govMetricCard("LAPD sworn", c.lapdSworn.toLocaleString(), c.hist.lapd, false)}
+    </div>
+    <p class="small" style="color:var(--muted);margin-top:6px">Policies feed multi-year pipelines (housing, hiring, shelter) that deliver gradually, cost money, and can be cut or struck down. Active programs: <b>${G.gov.pipelines.length}</b>.</p></div>`;
+}
+
 function govColor(v){ return v>=60?'var(--good)':v<=40?'var(--bad)':'var(--warn)'; }
 function govBar(label,val,color){ val=clamp(val);
   return `<div style="margin:4px 0"><div class="small" style="display:flex;justify-content:space-between"><span>${label}</span><b>${val}</b></div>
@@ -6527,6 +6627,7 @@ function govViewDashboard(){
   const seg=GOV_SEGMENTS.filter(([k])=>k!=="overall").map(([k,l])=>govBar(l,a[k],govColor(a[k]))).join("");
   const depts=GOV_DEPTS.map(d=>{ const h=gov.deptHealth[d.id]; const warn=h<35?' ⚠':''; return `<div style="margin:3px 0"><div class="small" style="display:flex;justify-content:space-between"><span>${d.name}${warn}</span><b style="color:${govColor(h)}">${h}</b></div><div style="height:6px;background:var(--panel2);border-radius:4px;overflow:hidden"><div style="height:100%;width:${h}%;background:${govColor(h)}"></div></div></div>`; }).join("");
   return `<div class="panel" style="margin-bottom:12px"><h3>Term timeline</h3>${govTimeline()}</div>
+  ${govViewCityOutcomes()}
   <div class="grid cols-3" style="gap:12px">
     <div class="panel"><h3>Approval trend</h3><div style="font-size:30px;font-weight:700;color:${govColor(a.overall)}">${a.overall}%</div>${govSparkline()}<div class="small" style="margin-top:6px">${seg}</div></div>
     <div class="panel"><h3>City status</h3>${depts}</div>
