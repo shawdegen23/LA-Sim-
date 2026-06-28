@@ -5795,7 +5795,10 @@ function govApplyMemberMeta(){
   const gov=G.gov; if(!gov) return; govResetMembers();
   if (gov.cd3){ const c=GOV_CD3_CHOICES.find(x=>x.id===gov.cd3); const m=govMember("CD3"); if(c&&m){ m.name=c.name; m.axis=Object.assign({},c.axis); m.lane="CD3 (elected '26)"; } }
   if (gov.cd9){ const c=GOV_CD9_CHOICES.find(x=>x.id===gov.cd9); const m=govMember("CD9"); if(c&&m){ m.name=c.name; m.axis=Object.assign({},c.axis); m.lane="CD9 (elected '26)"; } }
-  if (gov.office==="mayor" && gov.mayorWho==="raman"){ const m=govMember("CD4"); if(m){ m.name="(CD4 vacant — Raman → Mayor)"; m.vacant=true; } }
+  if (gov.office==="mayor" && gov.mayorWho==="raman"){
+    if (gov.cd4Appointee){ const c=GOV_CD4_FILL.find(x=>x.id===gov.cd4Appointee); const m=govMember("CD4"); if(c&&m&&!c.special){ m.name=c.name; m.axis=Object.assign({},c.axis); m.lane="CD4 (\u00a7409 appointee)"; m.vacant=false; } }
+    else { const m=govMember("CD4"); if(m){ m.name="(CD4 vacant \u2014 Raman \u2192 Mayor)"; m.vacant=true; } }
+  }
   if (gov.office==="council" && gov.district && gov.identityName){ const m=govMember(gov.district); if(m) m.name=gov.identityName; }
 }
 const GOV_CD3_CHOICES = [
@@ -6045,7 +6048,7 @@ function govNewState(){
   return {
     version:2,
     setupStep:"office", office:null, district:null, identityName:"", mayorWho:null, cd3:null, cd9:null,
-    turn:0, ap:3, apMax:3, capital:45, warChest:0, scandalRisk:6, reserve:5,
+    turn:0, ap:4, apMax:4, capRegenBonus:0, traits:[], cd4Appointee:null, capital:45, warChest:0, scandalRisk:6, reserve:5,
     approval:{ overall:50, progressives:50, moderates:50, business:50, homeowners:50, renters:50, publicSafety:50, labor:50, latino:50 },
     approvalHistory:[{turn:0, v:50}],
     councilRel:{}, president:"CD8",
@@ -6071,6 +6074,10 @@ function govEnsure(){
   if(!gov.legacy.confirmations) gov.legacy.confirmations=gov.legacy.confirmations||0;
   if(!gov.legacy.measuresPassed) gov.legacy.measuresPassed=gov.legacy.measuresPassed||0;
   GOV_DEPTS.forEach(d=>{ if(gov.deptHealth[d.id]===undefined) gov.deptHealth[d.id]=d.base; if(gov.budgetAlloc[d.id]===undefined) gov.budgetAlloc[d.id]=10; });
+  const baseAp=(gov.office==="mayor"&&gov.mayorWho==="raman")?5:4; if(!gov.apMax||gov.apMax<baseAp) gov.apMax=baseAp;
+  if(gov.capRegenBonus===undefined) gov.capRegenBonus=(gov.office==="mayor"&&gov.mayorWho==="bass")?2:0;
+  if(gov.cd4Appointee===undefined) gov.cd4Appointee=null;
+  if(!gov.traits||!gov.traits.length){ gov.traits=(gov.office==="mayor"&&gov.mayorWho==="raman")?["Grassroots energy (+1 action point/turn)","Progressive council bloc starts warmer"]:(gov.office==="mayor"&&gov.mayorWho==="bass")?["Institutional clout (+2 capital/turn)","Establishment council starts warmer"]:(gov.office==="council"?["Councilmanic prerogative in "+gov.district]:[]); }
 }
 function govLog(msg){ G.gov.log.unshift({ t:G.gov.turn, d:govDateStr(G.gov.turn), msg }); if (G.gov.log.length>140) G.gov.log.pop(); }
 
@@ -6105,7 +6112,30 @@ function govInitCouncil(){
     const dist=Math.abs(m.axis.prog-myAxis.prog)+Math.abs(m.axis.police-myAxis.police)+Math.abs(m.axis.business-myAxis.business);
     gov.councilRel[m.dist]=Math.round(Math.max(25,Math.min(75,70-dist/6)));
   });
+  GOV_MEMBERS.forEach(m=>{ if(m.vacant) return;
+    if (gov.office==="mayor" && gov.mayorWho==="raman" && m.axis.prog>=75) gov.councilRel[m.dist]=Math.min(100,(gov.councilRel[m.dist]||50)+6);
+    if (gov.office==="mayor" && gov.mayorWho==="bass"  && m.axis.prog<60)  gov.councilRel[m.dist]=Math.min(100,(gov.councilRel[m.dist]||50)+6);
+  });
   GOV_NCS.forEach(n=>gov.ncs[n]=50);
+}
+function govApplyPerks(){ const gov=G.gov; gov.apMax=4; gov.capRegenBonus=0; gov.traits=[];
+  if (gov.office==="mayor" && gov.mayorWho==="raman"){ gov.apMax=5; gov.traits=["Grassroots energy (+1 action point/turn)","Progressive council bloc starts warmer"]; }
+  else if (gov.office==="mayor" && gov.mayorWho==="bass"){ gov.capRegenBonus=2; gov.traits=["Institutional clout (+2 capital/turn)","Establishment council starts warmer"]; }
+  else if (gov.office==="council"){ gov.traits=["Councilmanic prerogative in "+gov.district]; }
+  gov.ap=gov.apMax;
+}
+const GOV_CD4_FILL=[
+  { id:"ally", name:"Progressive caretaker (Raman ally)", axis:{prog:88,dev:42,police:22,labor:80,business:24}, rel:82, note:"A Raman-aligned organizer \u2014 a reliable progressive vote." },
+  { id:"mod", name:"Labor-moderate compromise", axis:{prog:55,dev:55,police:55,labor:75,business:50}, rel:58, note:"A consensus pick the establishment can accept." },
+  { id:"special", name:"Call a special election", special:true, note:"\u00a7409: leave the seat vacant until voters fill it (Council sits at 14 for now)." },
+];
+function govFillCD4(id){ const gov=G.gov; if(!gov.flags.cd4vacant) return render(); if(!govSpendAP(1)) return render();
+  const c=GOV_CD4_FILL.find(x=>x.id===id); if(!c) return render();
+  if(c.special){ govLog("Called a \u00a7409 special election for CD4 \u2014 the seat stays vacant until voters decide."); render(); return; }
+  const m=govMember("CD4"); if(m){ m.name=c.name; m.axis=Object.assign({},c.axis); m.lane="CD4 (\u00a7409 appointee)"; m.vacant=false; }
+  gov.councilRel["CD4"]=c.rel; gov.flags.cd4vacant=false; gov.cd4Appointee=c.id;
+  govLog("CD4 vacancy filled by Council appointment (\u00a7409): "+c.name+" seated \u2014 your 15th vote restored.");
+  render();
 }
 function govPick(key,val){
   const gov=G.gov; gov[key]=val;
@@ -6119,7 +6149,7 @@ function govPick(key,val){
 function govFinishSetup(){
   const gov=G.gov; const inp=$("govNameInput");
   gov.identityName=(inp&&inp.value.trim())?inp.value.trim():govDefaultName();
-  govInitCouncil(); gov.setupStep="done"; G.phase="governing";
+  govApplyPerks(); govInitCouncil(); gov.setupStep="done"; G.phase="governing";
   govLog("Sworn in: "+govPlayerTitle()+".");
   render();
 }
@@ -6310,7 +6340,7 @@ function applySeg(seg,mul){ if(!seg)return; const a=G.gov.approval; Object.keys(
 function applyDept(dept,mul){ if(!dept)return; Object.keys(dept).forEach(k=>{ if(G.gov.deptHealth[k]!==undefined) G.gov.deptHealth[k]=clamp(G.gov.deptHealth[k]+dept[k]*mul); }); }
 function clamp(v){ return Math.max(0,Math.min(100,Math.round(v))); }
 function govRecalcOverall(){ const a=G.gov.approval; const keys=["progressives","moderates","business","homeowners","renters","publicSafety","labor","latino"]; const avg=keys.reduce((s,k)=>s+a[k],0)/keys.length; a.overall=Math.round(a.overall*0.5+avg*0.5); }
-function govCapitalRegen(){ return 6+Math.round((G.gov.approval.overall-50)/10); } // political capital regained per 2-week turn (scales with approval)
+function govCapitalRegen(){ return 6+Math.round((G.gov.approval.overall-50)/10)+(G.gov.capRegenBonus||0); } // political capital regained per 2-week turn (scales with approval)
 
 // ---- Turn advance ----------------------------------------------------------
 function govAdvanceTurn(){
@@ -6502,6 +6532,7 @@ function govViewDashboard(){
     <div class="panel"><h3>City status</h3>${depts}</div>
     <div class="panel"><h3>Standing</h3>
       <p class="small">Office: <b>${gov.office==="mayor"?"Mayor":"Councilmember "+gov.district}</b></p>
+      ${gov.traits&&gov.traits.length?`<p class="small" style="color:var(--accent2)">\u2726 ${gov.traits.map(escapeHtml).join(" \u00b7 ")}</p>`:""}
       ${gov.office==="council"?`<p class="small">Committees: <b>${govMyCommittees().map(c=>c.id.toUpperCase()).join(", ")||"—"}</b>${govChairsOf(gov.district).length?` · <span style="color:var(--accent)">chairs ${govChairsOf(gov.district).map(c=>c.name).join(", ")}</span>`:""}</p>`:""}
       <p class="small">Capital: <b>${gov.capital}/100</b> <span style="color:var(--muted)">(+~${govCapitalRegen()}/turn, more with approval)</span> · War chest: <b>$${gov.warChest.toLocaleString()}</b> · Reserve: <b>${gov.reserve.toFixed(1)}%</b></p>
       <p class="small">Laws: <b>${gov.legacy.lawsPassed}</b> · Crises: <b>${gov.legacy.crisesHandled}</b> · Confirms: <b>${gov.legacy.confirmations}</b> · Measures: <b>${gov.legacy.measuresPassed}</b></p>
@@ -6570,7 +6601,8 @@ function govViewCouncil(){
       ${govBar("With you",rel,govColor(rel))}`}
     </div>`;
   }).join("");
-  return `<div class="panel" style="margin-bottom:10px"><h3>The 15-member Council</h3><p class="small">Pass at <b>8</b>, override a veto at <b>10</b>, urgency/charter at <b>12</b>. Progressive/DSA bloc (CD1, 4, 13, 14 + allies) is a minority — build to 8. President Harris-Dawson (CD8) controls committee assignments.</p></div>
+  const vac = gov.flags.cd4vacant ? `<div class="panel" style="margin-bottom:10px;border-color:var(--warn)"><h3>CD4 vacancy (\u00a7409)</h3><p class="small">You vacated CD4 to become Mayor. The Council fills the seat by appointment, or you can let voters decide in a special election. Back a candidate to seat your 15th vote (\u22121 AP):</p>`+GOV_CD4_FILL.map(c=>`<button class="btn small" style="display:block;text-align:left;margin:4px 0;width:100%" onclick="govFillCD4('${c.id}')">${escapeHtml(c.name)} \u2014 <span class="small">${escapeHtml(c.note)}</span></button>`).join("")+`</div>` : "";
+  return vac + `<div class="panel" style="margin-bottom:10px"><h3>The 15-member Council</h3><p class="small">Pass at <b>8</b>, override a veto at <b>10</b>, urgency/charter at <b>12</b>. Progressive/DSA bloc (CD1, 4, 13, 14 + allies) is a minority — build to 8. President Harris-Dawson (CD8) controls committee assignments.</p></div>
     <div class="grid cols-3" style="gap:10px">${cards}</div>`;
 }
 
