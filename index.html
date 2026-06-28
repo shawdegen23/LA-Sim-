@@ -5847,27 +5847,52 @@ const GOV_BUDGET_TOTAL = 80; // allocation points spread across depts
 
 // ---- Appointable posts (Mayor) + candidate pools --------------------------
 const GOV_POSTS = [
-  { id:"police", post:"LAPD Chief", dept:"police", note:"From the Police Commission's ranked-3; council-confirmed; 5-yr term.",
-    cands:[
-      { name:"Reform-minded outsider", health:+14, seg:{progressives:+5,publicSafety:-4} },
-      { name:"Veteran insider", health:+9, seg:{publicSafety:+6,progressives:-4} },
-      { name:"Data-driven technocrat", health:+11, seg:{moderates:+4} },
-    ]},
+  { id:"police", post:"LAPD Chief", dept:"police", note:"§575: chosen from the Police Commission's ranked-3; 5-yr term; council-confirmed.",
+    cands:[ {name:"Reform-minded outsider", health:14, seg:{progressives:5,publicSafety:-4}},
+            {name:"Veteran insider", health:9, seg:{publicSafety:6,progressives:-4}},
+            {name:"Data-driven technocrat", health:11, seg:{moderates:4}} ]},
+  { id:"fire", post:"Fire Chief (LAFD)", dept:"fire", note:"GM appointment; council-confirmed. Post-wildfire scrutiny is high.",
+    cands:[ {name:"Wildfire-readiness reformer", health:13, seg:{homeowners:5,overall:2}},
+            {name:"Operations veteran", health:10, seg:{publicSafety:3,moderates:2}} ]},
   { id:"planning", post:"Planning Director", dept:"planning", note:"GM appointment; council-confirmed.",
-    cands:[
-      { name:"YIMBY pro-housing director", health:+12, seg:{renters:+4,homeowners:-3,business:+3} },
-      { name:"Slow-growth neighborhood advocate", health:+8, seg:{homeowners:+5,business:-3} },
-    ]},
-  { id:"housing", post:"Housing Dept GM", dept:"housing", note:"GM appointment; council-confirmed.",
-    cands:[
-      { name:"Tenant-protection champion", health:+12, seg:{renters:+6,business:-3} },
-      { name:"Public-private partnerships exec", health:+10, seg:{business:+4,renters:-1} },
-    ]},
+    cands:[ {name:"YIMBY pro-housing director", health:12, seg:{renters:4,homeowners:-3,business:3}},
+            {name:"Slow-growth neighborhood advocate", health:8, seg:{homeowners:5,business:-3}} ]},
+  { id:"housing", post:"Housing Dept GM (LAHD)", dept:"housing", note:"GM appointment; council-confirmed.",
+    cands:[ {name:"Tenant-protection champion", health:12, seg:{renters:6,business:-3}},
+            {name:"Public-private partnerships exec", health:10, seg:{business:4,renters:-1}} ]},
   { id:"homeless", post:"Homelessness Czar (Inside Safe lead)", dept:"homeless", note:"Mayoral coordinator role.",
-    cands:[
-      { name:"Housing-first nonprofit leader", health:+13, seg:{progressives:+5} },
-      { name:"Operations-focused logistics chief", health:+11, seg:{moderates:+4,homeowners:+3} },
-    ]},
+    cands:[ {name:"Housing-first nonprofit leader", health:13, seg:{progressives:5}},
+            {name:"Operations-focused logistics chief", health:11, seg:{moderates:4,homeowners:3}} ]},
+  { id:"transport", post:"LADOT General Manager", dept:"transport", note:"Streets, signals, parking, mobility; council-confirmed.",
+    cands:[ {name:"Vision Zero / transit advocate", health:11, seg:{progressives:3,renters:2}},
+            {name:"Traffic-flow & parking pragmatist", health:9, seg:{moderates:3,business:2}} ]},
+  { id:"sanitation", post:"Board of Public Works (Streets/Sanitation)", dept:"sanitation", note:"The only full-time PAID board; runs sanitation, streets, engineering.",
+    cands:[ {name:"Clean-streets operations chief", health:12, seg:{homeowners:4,overall:2}},
+            {name:"Environmental-justice reformer", health:9, seg:{progressives:4,homeowners:-1}} ]},
+  { id:"dwp", post:"Board of Water & Power Commissioners (DWP)", dept:"dwp", note:"Proprietary: the board you appoint picks DWP's GM. Largest US municipal utility.",
+    cands:[ {name:"Clean-energy transition board", health:12, seg:{progressives:4,overall:1}},
+            {name:"Rate-stability / reliability board", health:10, seg:{business:3,homeowners:2}} ]},
+  { id:"parks", post:"Recreation & Parks GM", dept:null, note:"400+ parks, pools, rec centers; council-confirmed.",
+    cands:[ {name:"Parks-equity expansion leader", seg:{progressives:3,latino:3,overall:2}},
+            {name:"Maintenance & safety operator", seg:{homeowners:4,moderates:2}} ]},
+  { id:"library", post:"City Librarian (LAPL)", dept:null, note:"Central + branch library system.",
+    cands:[ {name:"Access & literacy champion", seg:{progressives:3,overall:3}},
+            {name:"Digital-modernization leader", seg:{moderates:3,overall:2}} ]},
+  { id:"buildsafety", post:"Building & Safety GM (LADBS)", dept:null, note:"Permits, inspections, code compliance.",
+    cands:[ {name:"Permit-streamlining reformer", seg:{business:5,homeowners:3}, cap:4},
+            {name:"Strict-enforcement inspector", seg:{renters:3,progressives:2}} ]},
+  { id:"airports", post:"Board of Airport Commissioners (LAWA, 7)", dept:null, note:"Proprietary: LAX/Van Nuys; the board picks the CEO. Pivotal for LA28.",
+    cands:[ {name:"LAX-modernization / LA28 board", seg:{business:6,overall:2}, cap:5},
+            {name:"Community-impact & labor board", seg:{labor:5,progressives:3}} ]},
+  { id:"harbor", post:"Board of Harbor Commissioners (Port)", dept:null, note:"Proprietary: Port of LA; the board picks the Executive Director.",
+    cands:[ {name:"Trade-growth & jobs board", seg:{business:5,labor:4}, cap:4},
+            {name:"Clean-port / zero-emission board", seg:{progressives:5,labor:1}} ]},
+  { id:"ethics", post:"Ethics Commission seat (1 of 5)", dept:null, note:"§700: you appoint only ONE of five seats — limited leverage, but a clean-government signal.",
+    cands:[ {name:"Strict watchdog reformer", seg:{progressives:4,overall:3}, scandal:-6},
+            {name:"Pragmatic compliance lawyer", seg:{moderates:2,overall:1}, scandal:-3} ]},
+  { id:"civilservice", post:"Civil Service Commission", dept:null, note:"Oversees the merit personnel system; hears employee appeals.",
+    cands:[ {name:"Worker-protections commissioner", seg:{labor:5,progressives:2}},
+            {name:"Efficiency-modernization commissioner", seg:{business:3,moderates:2}} ]},
 ];
 
 // ---- Neighborhood councils (player district flavor) -----------------------
@@ -6178,7 +6203,7 @@ function govFloorVote(billId){
 function govEnact(b, yes, overrode){
   G.gov.passedLaws.push({ billId:b.id, title:b.title, turn:G.gov.turn, yes, overrode:!!overrode });
   G.gov.legacy.lawsPassed++;
-  applySeg(b.seg,1); applyDept(b.dept,1);
+  applySeg(b.seg,1); applyDept(b.dept,1); G.gov.capital=Math.min(100,G.gov.capital+4);
   govLog("✔ ENACTED: “"+b.title+"” ("+yes+"/15"+(overrode?", override":"")+"). Signed into law.");
 }
 function govMayorVeto(b, yes){
@@ -6188,7 +6213,7 @@ function govMayorVeto(b, yes){
 }
 
 // ---- Soft actions ----------------------------------------------------------
-function govTownHall(){ if(!govSpendAP(1))return render(); bumpApproval({overall:+3,renters:+2,homeowners:+2}); G.gov.capital=Math.min(100,G.gov.capital+3); govLog("Held a town hall — approval & goodwill up."); render(); }
+function govTownHall(){ if(!govSpendAP(1))return render(); bumpApproval({overall:+3,renters:+2,homeowners:+2}); G.gov.capital=Math.min(100,G.gov.capital+5); govLog("Held a town hall — approval & goodwill up."); render(); }
 function govConstituent(){ if(!govSpendAP(1))return render(); bumpApproval({overall:+2,latino:+3,renters:+2}); Object.keys(G.gov.ncs).forEach(n=>G.gov.ncs[n]=Math.min(100,G.gov.ncs[n]+3)); govLog("Constituent-services week — district goodwill up."); render(); }
 function govFavor(){ if(!govSpendAP(1))return render(); if(G.gov.capital<6){govLog("Need 6 capital to trade a favor.");return render();} G.gov.capital-=6;
   const pool=GOV_MEMBERS.filter(m=>!m.vacant&&!(G.gov.office==="council"&&m.dist===G.gov.district)).sort(()=>Math.random()-0.5).slice(0,2);
@@ -6204,7 +6229,7 @@ function govAppoint(postId, candIdx){
   if (!govSpendAP(1)){ render(); return; }
   if (gov.filledPosts && gov.filledPosts[postId]){ govLog("That post is already filled — use Replace to change it."); render(); return; }
   const post=GOV_POSTS.find(p=>p.id===postId); const cand=post.cands[candIdx];
-  gov.pendingConfirm={ postId, candIdx, name:cand.name, post:post.post, dept:post.dept, health:cand.health, seg:cand.seg, sentTurn:gov.turn };
+  gov.pendingConfirm={ postId, candIdx, name:cand.name, post:post.post, dept:post.dept, health:cand.health||0, seg:cand.seg, cap:cand.cap||0, scandal:cand.scandal||0, sentTurn:gov.turn };
   govLog("Nominated "+cand.name+" for "+post.post+" — sent to Council for confirmation (45-day window).");
   render();
 }
@@ -6217,11 +6242,15 @@ function govResolveConfirm(force){
     const lean=50+(n?(s/n)*100:0)*0.4+(govRel(m.dist)-50)*0.4; if(lean>=49)yes++; });
   const confirmed=yes>=8;
   if (confirmed){
-    const d=govDept(pc.dept); if(d) d.head=pc.name; gov.deptHealth[pc.dept]=Math.min(100,gov.deptHealth[pc.dept]+pc.health);
-    applySeg(pc.seg,1); gov.legacy.confirmations++;
+    const dep=govDept(pc.dept);
+    if (dep && gov.deptHealth[pc.dept]!==undefined && pc.health){ dep.head=pc.name; gov.deptHealth[pc.dept]=Math.min(100,gov.deptHealth[pc.dept]+pc.health); }
+    applySeg(pc.seg,1);
+    if (pc.cap) gov.capital=Math.min(100,gov.capital+pc.cap);
+    if (pc.scandal) gov.scandalRisk=Math.max(0,gov.scandalRisk+pc.scandal);
+    gov.legacy.confirmations++;
     gov.filledPosts[pc.postId]=pc.name;
     gov.appointments.push({ post:pc.post, name:pc.name, dept:pc.dept, status:"confirmed" });
-    govLog("✔ Council CONFIRMED "+pc.name+" as "+pc.post+" ("+yes+"/15). "+(govDept(pc.dept)?govDept(pc.dept).name:"")+" strengthened.");
+    govLog("✔ Council CONFIRMED "+pc.name+" as "+pc.post+" ("+yes+"/15)."+(dep?" "+dep.name+" strengthened.":""));
   } else {
     gov.appointments.push({ post:pc.post, name:pc.name, dept:pc.dept, status:"rejected" });
     govLog("✗ Council REJECTED "+pc.name+" for "+pc.post+" ("+yes+"/15, needed 8).");
@@ -6281,6 +6310,7 @@ function applySeg(seg,mul){ if(!seg)return; const a=G.gov.approval; Object.keys(
 function applyDept(dept,mul){ if(!dept)return; Object.keys(dept).forEach(k=>{ if(G.gov.deptHealth[k]!==undefined) G.gov.deptHealth[k]=clamp(G.gov.deptHealth[k]+dept[k]*mul); }); }
 function clamp(v){ return Math.max(0,Math.min(100,Math.round(v))); }
 function govRecalcOverall(){ const a=G.gov.approval; const keys=["progressives","moderates","business","homeowners","renters","publicSafety","labor","latino"]; const avg=keys.reduce((s,k)=>s+a[k],0)/keys.length; a.overall=Math.round(a.overall*0.5+avg*0.5); }
+function govCapitalRegen(){ return 6+Math.round((G.gov.approval.overall-50)/10); } // political capital regained per 2-week turn (scales with approval)
 
 // ---- Turn advance ----------------------------------------------------------
 function govAdvanceTurn(){
@@ -6329,7 +6359,7 @@ function govEndTurnTicks(){
   // scandal check
   if (gov.scandalRisk>45 && Math.random()<(gov.scandalRisk-45)/120){ bumpApproval({overall:-6,progressives:-4}); gov.scandalRisk=Math.max(10,gov.scandalRisk-15); govLog("⚠ A scandal story broke — approval took a hit."); }
   // capital regen + decay
-  gov.capital=Math.min(100, gov.capital+4+Math.round((gov.approval.overall-50)/12));
+  gov.capital=Math.min(100, gov.capital+govCapitalRegen());
   gov.scandalRisk=Math.max(0, gov.scandalRisk-1+neglect);
   // mild mean-reversion
   GOV_SEGMENTS.forEach(([k])=>{ if(k!=="overall"){ const a=gov.approval; a[k]=Math.round(a[k]+(50-a[k])*0.03); }});
@@ -6473,7 +6503,7 @@ function govViewDashboard(){
     <div class="panel"><h3>Standing</h3>
       <p class="small">Office: <b>${gov.office==="mayor"?"Mayor":"Councilmember "+gov.district}</b></p>
       ${gov.office==="council"?`<p class="small">Committees: <b>${govMyCommittees().map(c=>c.id.toUpperCase()).join(", ")||"—"}</b>${govChairsOf(gov.district).length?` · <span style="color:var(--accent)">chairs ${govChairsOf(gov.district).map(c=>c.name).join(", ")}</span>`:""}</p>`:""}
-      <p class="small">Capital: <b>${gov.capital}/100</b> · War chest: <b>$${gov.warChest.toLocaleString()}</b> · Reserve: <b>${gov.reserve.toFixed(1)}%</b></p>
+      <p class="small">Capital: <b>${gov.capital}/100</b> <span style="color:var(--muted)">(+~${govCapitalRegen()}/turn, more with approval)</span> · War chest: <b>$${gov.warChest.toLocaleString()}</b> · Reserve: <b>${gov.reserve.toFixed(1)}%</b></p>
       <p class="small">Laws: <b>${gov.legacy.lawsPassed}</b> · Crises: <b>${gov.legacy.crisesHandled}</b> · Confirms: <b>${gov.legacy.confirmations}</b> · Measures: <b>${gov.legacy.measuresPassed}</b></p>
       ${gov.flags.tookDeveloperMoney?`<p class="small" style="color:var(--bad)">⚠ Developer ties — federal probe possible.</p>`:""}
       ${gov.flags.cd4vacant?`<p class="small" style="color:var(--warn)">CD4 vacant (Raman → Mayor) — §409 pending.</p>`:""}
@@ -6550,16 +6580,17 @@ function govViewBudget(){
     const rows=GOV_DEPTS.map(d=>`<div class="small" style="display:flex;justify-content:space-between;padding:2px 0"><span>${d.name} <span style="color:var(--muted)">(${gov.budgetAlloc[d.id]} pts)</span></span><b style="color:${govColor(gov.deptHealth[d.id])}">health ${gov.deptHealth[d.id]}</b></div>`).join("");
     return `<div class="panel"><h3>Budget — no cycle pending</h3><p class="small">FY runs Jul 1–Jun 30: Mayor submits by <b>Apr 20</b>, Council adopts (majority 8) by <b>Jun 1</b>. Current allocation & department health:</p>${rows}<p class="small" style="margin-top:6px">Reserve fund: <b>${gov.reserve.toFixed(1)}%</b> (2.75% legal floor) · Budgets adopted: <b>${gov.budgetsAdopted}</b>. The next cycle opens each spring.</p></div>`;
   }
-  const d=gov.budget.draft; const total=GOV_DEPTS.reduce((s,x)=>s+d[x.id],0);
+  const d=gov.budget.draft; const total=GOV_DEPTS.reduce((s,x)=>s+d[x.id],0); const free=GOV_BUDGET_TOTAL-total;
   const rows=GOV_DEPTS.map(dp=>{ const target=Math.max(15,Math.min(90,dp.base+(d[dp.id]-10)*4));
-    return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><span class="small" style="width:130px">${dp.name}</span>
-      <button class="btn small" onclick="govBudgetAdjust('${dp.id}',-1)">−</button><b style="width:24px;text-align:center">${d[dp.id]}</b><button class="btn small" onclick="govBudgetAdjust('${dp.id}',1)">+</button>
-      <span class="small" style="color:var(--muted)">→ health target ~${target}</span></div>`; }).join("");
-  return `<div class="panel"><h3>FY${gov.budget.yr+1} budget — allocate ${GOV_BUDGET_TOTAL} points</h3>
-    <p class="small">${gov.office==="mayor"?"You propose; the Council adopts by majority.":"The Mayor proposed; you shape adoption."} Allocated: <b style="color:${total>GOV_BUDGET_TOTAL?'var(--bad)':'var(--text)'}">${total}/${GOV_BUDGET_TOTAL}</b> ${total<GOV_BUDGET_TOTAL?`<span class="small">(${GOV_BUDGET_TOTAL-total} → reserve)</span>`:''}</p>
+    const minus=d[dp.id]<=0?'disabled':''; const plus=free<=0?'disabled':'';
+    return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><span class="small" style="width:150px">${dp.name}</span>
+      <button class="btn small" onclick="govBudgetAdjust('${dp.id}',-1)" ${minus}>-</button><b style="width:24px;text-align:center">${d[dp.id]}</b><button class="btn small" onclick="govBudgetAdjust('${dp.id}',1)" ${plus}>+</button>
+      <span class="small" style="color:var(--muted)">\u2192 health target ~${target} (now ${gov.deptHealth[dp.id]})</span></div>`; }).join("");
+  return `<div class="panel"><h3>FY${gov.budget.yr+1} budget \u2014 ${GOV_BUDGET_TOTAL} points</h3>
+    <p class="small">${gov.office==="mayor"?"You propose; the Council adopts by majority.":"The Mayor proposed; you shape adoption."} <b>Unallocated: <span style="color:${free>0?'var(--accent)':'var(--muted)'}">${free}</span></b> ${free<=0?'<span class="small" style="color:var(--warn)">\u2014 it\u2019s a fixed pie: reduce a department (\u2212) to free points, then add (+) elsewhere.</span>':'<span class="small">\u2014 assign to priorities with (+).</span>'}</p>
     ${rows}
-    <div class="row" style="margin-top:10px"><button class="btn primary" onclick="govBudgetAdopt()" ${total>GOV_BUDGET_TOTAL?'disabled':''}>Adopt budget</button></div>
-    <p class="small" style="margin-top:6px;color:var(--muted)">Real context: FY26-27 ~$14.9B, ~$25M gap after last year's ~$1B deficit.</p></div>`;
+    <div class="row" style="margin-top:10px"><button class="btn primary" onclick="govBudgetAdopt()">Adopt budget${free>0?` (${free} \u2192 reserve)`:''}</button></div>
+    <p class="small" style="margin-top:6px;color:var(--muted)">Real context: FY26-27 ~$14.9B, ~$25M gap after last year\u2019s ~$1B deficit.</p></div>`;
 }
 
 function govViewAppointments(){
@@ -6571,7 +6602,7 @@ function govViewAppointments(){
     const inner = filled
       ? `<p class="small">${escapeHtml(p.note)}<br><span style="color:var(--good)">✔ Appointed: <b>${escapeHtml(filled)}</b></span></p><div><button class="btn small" onclick="govReplacePost('${p.id}')" ${gov.pendingConfirm?'disabled':''}>Replace appointee</button></div>`
       : `<p class="small">${escapeHtml(p.note)} ${d&&d.head?`<br>Current: <b>${escapeHtml(d.head)}</b>`:''}</p><div>`+p.cands.map((c,i)=>`<button class="btn small" style="margin:3px 4px 0 0" onclick="govAppoint('${p.id}',${i})" ${gov.pendingConfirm?'disabled':''}>Nominate: ${escapeHtml(c.name)} (+${c.health})</button>`).join("")+`</div>`;
-    return `<div class="panel" style="margin:8px 0"><b>${escapeHtml(p.post)}</b> <span class="small">· ${d?d.name:''} · health ${gov.deptHealth[p.dept]}</span>${inner}</div>`; }).join("");
+    return `<div class="panel" style="margin:8px 0"><b>${escapeHtml(p.post)}</b> <span class="small">· ${d?d.name+' · health '+gov.deptHealth[p.dept]:'council-confirmed'}</span>${inner}</div>`; }).join("");
   let history = gov.appointments.length? `<div class="panel" style="margin-top:8px"><h3>Appointment record</h3>`+gov.appointments.map(ap=>`<div class="small">${ap.status==="confirmed"?'✔':'✗'} ${escapeHtml(ap.name)} — ${escapeHtml(ap.post)} (${ap.status})</div>`).join("")+`</div>`:"";
   return `<h3>Mayoral appointments</h3><p class="small">Appoint GMs & commission heads (−1 AP); the Council confirms by majority (8), with a 45-day default-approval window. Strong picks raise department health.</p>${pending}${posts}${history}`;
 }
