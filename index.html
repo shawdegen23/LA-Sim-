@@ -5846,7 +5846,34 @@ const GOV_DEPTS = [
 function govDept(id){ return GOV_DEPTS.find(d=>d.id===id); }
 const GOV_DEPTS_TEMPLATE = JSON.stringify(GOV_DEPTS);
 function govResetDepts(){ const t=JSON.parse(GOV_DEPTS_TEMPLATE); GOV_DEPTS.length=0; t.forEach(x=>GOV_DEPTS.push(x)); }
-const GOV_BUDGET_TOTAL = 80; // allocation points spread across depts
+const GOV_BUDGET_TOTAL = 80; // (legacy; superseded by the real-dollar fin model below)
+const GOV_FIN_LINES = [
+  { id:"police", name:"LAPD (Police)", base:3530, health:"police" },
+  { id:"fire", name:"LAFD (Fire)", base:1460, health:"fire" },
+  { id:"publicworks", name:"Public Works / Sanitation", base:2050, health:"sanitation" },
+  { id:"transport", name:"Transportation (LADOT)", base:396, health:"transport" },
+  { id:"housing", name:"Housing (LAHD)", base:600, health:"housing" },
+  { id:"homeless", name:"Homelessness", base:1000, health:"homeless" },
+  { id:"planning", name:"City Planning", base:250, health:"planning" },
+  { id:"parks", name:"Recreation & Parks", base:372 },
+  { id:"library", name:"Library", base:280 },
+  { id:"other", name:"Other departments & services", base:3068 },
+];
+const GOV_FIN_FIXED = [ {id:"benefits",name:"Employee benefits & pensions",amt:1000}, {id:"debt",name:"Debt service",amt:116}, {id:"liability",name:"Liability claims",amt:210}, {id:"general",name:"General City Purposes",amt:518} ];
+const GOV_FIN_REVENUE = [
+  {id:"property",name:"Property tax",amt:2954,vol:0.03},
+  {id:"dept",name:"Departmental receipts (fees/permits)",amt:1856,vol:0.05},
+  {id:"business",name:"Business tax",amt:896,vol:0.08},
+  {id:"uut",name:"Utility users' tax",amt:770,vol:0.05},
+  {id:"sales",name:"Sales tax",amt:682,vol:0.12},
+  {id:"tot",name:"Hotel / transient-occupancy tax",amt:314,vol:0.30},
+  {id:"dwp",name:"DWP transfer",amt:220,vol:0.05},
+  {id:"other",name:"Other revenue & special funds",amt:7158,vol:0.06},
+];
+function govFinFixedTotal(){ return GOV_FIN_FIXED.reduce((s,x)=>s+x.amt,0); }
+function govAnnualRevenue(){ const e=(G.gov&&G.gov.econ)||0; return Math.round(GOV_FIN_REVENUE.reduce((s,r)=>s+r.amt*(1+e*(0.5+r.vol*8)),0)); }
+function govFmtB(m){ return "$"+(m/1000).toFixed(2)+"B"; }
+function govFmtM(m){ return "$"+Math.round(m).toLocaleString()+"M"; }
 
 // ---- Appointable posts (Mayor) + candidate pools --------------------------
 const GOV_POSTS = [
@@ -5953,6 +5980,23 @@ const GOV_BILLS = [
   { id:"austerity", title:"Structural-deficit austerity package", comm:"budget", threshold:8,
     desc:"Cut spending to close the gap; angers labor.",
     appeal:{business:0.9,labor:-1,prog:-0.6}, seg:{business:+8,labor:-10,progressives:-5}, dept:{} },
+  { id:"ed1codify", title:"Codify ED1 affordable-housing streamlining", comm:"plum", threshold:8, desc:"Make the fast-track for 100%-affordable projects permanent law (the real Dec 2025 ordinance).", appeal:{dev:0.8,prog:0.4}, seg:{renters:+6,progressives:+4,business:+3,homeowners:-3}, dept:{planning:+4,housing:+3} },
+  { id:"ulaexpand", title:"Defend & expand Measure ULA (mansion tax)", comm:"budget", threshold:8, desc:"Protect the 'mansion tax' funding affordable housing & eviction defense from repeal.", appeal:{prog:0.7,business:-0.8}, seg:{renters:+6,progressives:+6,business:-7,homeowners:-2}, dept:{housing:+3} },
+  { id:"anticamp4118", title:"Expand 41.18 anti-camping enforcement", comm:"works", threshold:8, desc:"Bar sitting/sleeping near schools, parks, and businesses in more zones.", appeal:{police:0.6,prog:-0.7}, seg:{homeowners:+7,business:+6,publicSafety:+4,progressives:-9,renters:-4}, dept:{} },
+  { id:"oilban", title:"Phase out urban oil drilling", comm:"energy", threshold:8, desc:"Ban new wells and sunset existing ones within 20 years (the real 12-0 vote).", appeal:{prog:0.8,business:-0.7}, seg:{progressives:+7,latino:+5,business:-6}, dept:{} },
+  { id:"strcrackdown", title:"Crack down on illegal short-term rentals", comm:"housing", threshold:8, desc:"Enforce the Home-Sharing Ordinance; return units to long-term housing.", appeal:{prog:0.5}, seg:{renters:+6,homeowners:+4,business:-4,progressives:+3}, dept:{} },
+  { id:"olympicwage", title:"Olympic & tourism $30 minimum wage", comm:"ecdev", threshold:8, desc:"Raise hotel & airport worker wages toward $30/hr ahead of LA28.", appeal:{labor:1,prog:0.6,business:-0.9}, seg:{labor:+10,progressives:+5,business:-9,renters:+3}, dept:{} },
+  { id:"grydfund", title:"Fund GRYD gang-prevention", comm:"safety", threshold:8, desc:"Expand the Gang Reduction & Youth Development program in 23 zones.", appeal:{prog:0.6,police:0.2}, seg:{progressives:+6,latino:+5,publicSafety:+3}, dept:{} },
+  { id:"visionzero", title:"Vision Zero traffic-safety package", comm:"transport", threshold:8, desc:"Street redesigns to cut pedestrian deaths.", appeal:{prog:0.6}, seg:{progressives:+5,renters:+3,homeowners:-1}, dept:{transport:+4} },
+  { id:"dwpclean", title:"LADWP 100% clean energy by 2035", comm:"energy", threshold:8, desc:"Accelerate coal divestment and renewables.", appeal:{prog:0.8,business:-0.3}, seg:{progressives:+7,business:-2}, dept:{dwp:+5} },
+  { id:"sanctuary", title:"Strengthen sanctuary-city protections", comm:"rules", threshold:8, desc:"Bar city resources from federal civil immigration enforcement.", appeal:{prog:0.9}, seg:{progressives:+7,latino:+7,publicSafety:-2}, dept:{} },
+  { id:"evictiondefense", title:"ULA-funded eviction defense (right to counsel)", comm:"housing", threshold:8, desc:"Guarantee tenants legal representation in eviction court.", appeal:{prog:0.8,business:-0.5}, seg:{renters:+8,progressives:+6,business:-4}, dept:{} },
+  { id:"parksbond", title:"Parks & libraries bond", comm:"budget", threshold:12, desc:"Borrow to renovate parks, pools, and branch libraries (bond = supermajority).", appeal:{prog:0.3}, seg:{overall:+5,homeowners:+4,latino:+3}, dept:{} },
+  { id:"vendingexpand", title:"Expand sidewalk-vending zones", comm:"ecdev", threshold:8, desc:"Legalize more street-vending corridors and ease permits.", appeal:{prog:0.6}, seg:{latino:+6,progressives:+4,business:-2}, dept:{} },
+  { id:"fairplan", title:"Wildfire insurance / FAIR Plan advocacy", comm:"rules", threshold:8, desc:"Press the state on insurance availability for fire-affected homeowners.", appeal:{}, seg:{homeowners:+7,overall:+3}, dept:{} },
+  { id:"metrotransit", title:"Metro transit-expansion package", comm:"transport", threshold:8, desc:"Back rail/bus expansion and bus-lane priority for LA28.", appeal:{prog:0.5,business:0.4}, seg:{progressives:+5,business:+4,overall:+2}, dept:{transport:+5} },
+  { id:"copliability", title:"Police-misconduct liability reform", comm:"safety", threshold:8, desc:"Strengthen oversight and discipline for use-of-force.", appeal:{prog:0.8,police:-0.6}, seg:{progressives:+7,renters:+3,publicSafety:-6}, dept:{} },
+  { id:"budgetstab", title:"Build the Budget Stabilization Fund", comm:"budget", threshold:8, desc:"Sock away surplus to buffer the next downturn.", appeal:{business:0.7}, seg:{business:+6,moderates:+4,labor:-2}, dept:{} },
 ];
 function govBill(id){ return GOV_BILLS.find(b => b.id === id); }
 function govBillComm(b){ return govCommittee(b.comm); }
@@ -6003,6 +6047,27 @@ const GOV_EVENTS = [
       { label:"Slash permitting red tape", eff:{seg:{homeowners:+7,business:+3,overall:+3}, cap:-3, dept:{planning:+2}} },
       { label:"Insist on fire-resilient standards", eff:{seg:{homeowners:-3,progressives:+3}, dept:{fire:+2}} },
     ]},
+  { id:"palisadesinsurance", w:2, title:"Wildfire insurance crisis", body:"Fire survivors are dumped onto the state FAIR Plan; rebuilding stalls as claims are denied.", choices:[ {label:"Pressure insurers & the state hard", eff:{seg:{homeowners:+6,overall:+2}, cap:-4}}, {label:"Focus on city permitting only", eff:{seg:{homeowners:-2,business:+2}}} ]},
+  { id:"dwpreservoir", w:1, title:"DWP reservoir liability bombshell", body:"A suit alleges LADWP left the Santa Ynez Reservoir empty when the fire hit \u2014 potential billions.", choices:[ {label:"Accept responsibility & settle", eff:{seg:{overall:+2}, cap:-6, reserve:-2}}, {label:"Fight it in court", eff:{seg:{overall:-4}, scandal:+5}} ]},
+  { id:"ularepeal", w:2, title:"Statewide ULA repeal on the ballot", body:"A Nov 2026 initiative would kill the mansion tax \u2014 your housing funding is at risk.", choices:[ {label:"Campaign hard to save ULA", eff:{seg:{progressives:+5,business:-3}, cap:-6}}, {label:"Stay neutral", eff:{seg:{progressives:-4,business:+3}, cutKind:"housing"}} ]},
+  { id:"hudfreeze", w:2, title:"HUD freezes homelessness funds", body:"The feds suspend ~$200M to LA's homeless system citing mismanagement.", choices:[ {label:"Backfill with city money", eff:{reserve:-3, seg:{progressives:+3}, cap:-4}}, {label:"Let programs contract", eff:{seg:{progressives:-5,overall:-3}, cutKind:"shelter", homeless:+400}} ]},
+  { id:"countypull", w:1, title:"County pulls homeless funding", body:"The Supervisors stand up their own department and pull ~$300M \u2014 you have no vote.", choices:[ {label:"Build the city's own homeless dept", eff:{cap:-6, seg:{moderates:+2}}}, {label:"Scramble to adjust", eff:{seg:{overall:-3}, cutKind:"shelter"}} ]},
+  { id:"sweepbacklash", w:2, title:"Encampment-sweep backlash", body:"A 41.18 clearing at a park (echoes of Echo Park) draws 400 protesters and national press.", choices:[ {label:"Pause sweeps, lead with housing", eff:{seg:{progressives:+6,homeowners:-3}, cutKind:"sweep"}}, {label:"Defend the clearing", eff:{seg:{homeowners:+5,progressives:-7,publicSafety:+2}, cap:-2}} ]},
+  { id:"iceraid", w:2, title:"ICE raids hit street vendors", body:"Federal sweeps target MacArthur Park vendors; the community is terrified.", choices:[ {label:"Publicly defend immigrants & vendors", eff:{seg:{progressives:+6,latino:+8,business:-1}, cap:-3}}, {label:"Stay out of federal matters", eff:{seg:{latino:-7,progressives:-5}}} ]},
+  { id:"olympicsdisplace", w:1, title:"Olympics displacement protest", body:"NOlympics LA calls your encampment policy a 2028 'practice run' and blocks a freeway.", choices:[ {label:"Pledge anti-displacement guarantees", eff:{seg:{progressives:+5,renters:+3,business:-2}, cap:-3}}, {label:"Tout the 'no-build' Games", eff:{seg:{business:+4,progressives:-3}}} ]},
+  { id:"redistrict", w:1, title:"Redistricting scandal echo", body:"A leaked recording revives the 2022 council racism scandal; ethics are in the spotlight.", choices:[ {label:"Champion the independent commission", eff:{seg:{progressives:+5,overall:+4}, scandal:-4}}, {label:"Downplay it", eff:{seg:{overall:-4}, scandal:+4}} ]},
+  { id:"filmexodus", w:1, title:"Hollywood production keeps fleeing", body:"Film/TV shoot days hit a historic low; middle-class jobs vanish.", choices:[ {label:"Back tax credits & permitting help", eff:{seg:{labor:+5,business:+4}, cap:-3}}, {label:"Prioritize other sectors", eff:{seg:{labor:-4,business:-2}}} ]},
+  { id:"heatwave", w:2, title:"Record Valley heat wave", body:"The San Fernando Valley hits 115\u00b0F; the unsheltered and elderly are at risk.", choices:[ {label:"Open cooling centers citywide", eff:{seg:{overall:+3,latino:+3}, cap:-3}}, {label:"Issue an advisory only", eff:{seg:{overall:-3}, homeless:+200}} ]},
+  { id:"oilblowout", w:1, title:"Urban oil-well blowout", body:"A leaking well near homes sickens residents.", choices:[ {label:"Accelerate the drilling phase-out", eff:{seg:{progressives:+5,latino:+4,business:-3}, cap:-3}}, {label:"Order a study", eff:{seg:{progressives:-3,overall:-2}}} ]},
+  { id:"skidrowsurge", w:1, title:"Skid Row crisis surge", body:"DTLA's Skid Row sees a spike in overdoses and deaths.", choices:[ {label:"Surge services & outreach", eff:{seg:{progressives:+4}, cap:-4, homeless:-150}}, {label:"Increase policing", eff:{seg:{homeowners:+3,progressives:-4,publicSafety:+2}}} ]},
+  { id:"plumprobe", w:1, title:"Federal probe of a PLUM land-use vote", body:"Prosecutors examine a development approval \u2014 the Huizar pattern hangs over City Hall.", choices:[ {label:"Demand transparency & cooperate", eff:{seg:{progressives:+4,overall:+2}, scandal:-5}}, {label:"Circle the wagons", eff:{seg:{overall:-4}, scandal:+6}} ]},
+  { id:"buildersremedy", w:1, title:"Builder's remedy looms", body:"With the Housing Element out of compliance, developers can bypass local zoning entirely.", choices:[ {label:"Get the Housing Element certified fast", eff:{seg:{homeowners:+3,business:+2}, cap:-5}}, {label:"Resist state mandates", eff:{seg:{homeowners:+5,renters:-4,business:-3}, cutKind:"housing"}} ]},
+  { id:"portlabor", w:1, title:"Port automation labor fight", body:"Dockworkers strike over automation at the Port of LA.", choices:[ {label:"Side with labor", eff:{seg:{labor:+7,business:-4}, cap:-3}}, {label:"Side with port competitiveness", eff:{seg:{business:+6,labor:-7}}} ]},
+  { id:"countrevision", w:1, title:"Homeless count revised upward", body:"An independent study finds the official count undercounted by ~30%.", choices:[ {label:"Embrace better data", eff:{seg:{progressives:+2,overall:-2}, homeless:+800}}, {label:"Defend the official count", eff:{seg:{overall:-3}, scandal:+3}} ]},
+  { id:"copshortage", w:2, title:"LAPD recruiting falls short", body:"A hiring class comes in far below target; non-emergency response times balloon past 60 minutes.", choices:[ {label:"Boost recruitment incentives", eff:{seg:{publicSafety:+4}, cap:-4, lapd:+60}}, {label:"Lean on civilian & tech solutions", eff:{seg:{progressives:+3,publicSafety:-2}}} ]},
+  { id:"gentdisplace", w:1, title:"Gentrification flashpoint in Boyle Heights", body:"Activists block a new development; tenants fear being priced out.", choices:[ {label:"Require deep affordability", eff:{seg:{progressives:+5,renters:+4,business:-3}, cap:-2}}, {label:"Let the market build", eff:{seg:{business:+4,progressives:-4,renters:-2}}} ]},
+  { id:"laborcola", w:2, title:"Labor COLA crunch", body:"Negotiated raises (~22% over 5 years) are blowing a hole in the budget.", choices:[ {label:"Honor the contracts, cut elsewhere", eff:{seg:{labor:+5,overall:-2}, reserve:-2}}, {label:"Reopen negotiations", eff:{seg:{labor:-7,business:+4}, cap:-3}} ]},
+  { id:"streetvend", w:1, title:"Street-vending corridor clash", body:"Brick-and-mortar businesses and vendors clash over sidewalk space in the Fashion District.", choices:[ {label:"Protect & permit vendors", eff:{seg:{latino:+5,progressives:+3,business:-2}}}, {label:"Side with storefronts", eff:{seg:{business:+4,latino:-4}}} ]},
 ];
 // District land-use item (councilmanic prerogative); appears for council players
 const GOV_PROEROG = { id:"prerogative", title:"A developer's project lands in your district", prerog:true,
@@ -6052,7 +6117,7 @@ function govNewState(){
     approval:{ overall:50, progressives:50, moderates:50, business:50, homeowners:50, renters:50, publicSafety:50, labor:50, latino:50 },
     approvalHistory:[{turn:0, v:50}],
     councilRel:{}, president:"CD8",
-    deptHealth:health, budgetAlloc:alloc, budget:null, budgetsAdopted:0, lastBudgetYear:0,
+    deptHealth:health, budgetAlloc:alloc, fin:{alloc:(function(){const a={};GOV_FIN_LINES.forEach(l=>a[l.id]=l.base);return a;})()}, econ:0, budget:null, budgetsAdopted:0, lastBudgetYear:0,
     initiatives:[], passedLaws:[], vetoedLaws:[],
     appointments:[],         // {postId, candIdx, name, status:'pending'|'confirmed'|'rejected', dept}
     filledPosts:{},          // postId -> confirmed appointee name (post is filled)
@@ -6084,6 +6149,9 @@ function govEnsure(){
   if(!gov.city.hist) gov.city.hist={ homeless:[43700], homes:[0], lapd:[8620], crime:[46] };
   if(!gov.pipelines) gov.pipelines=[];
   if(!gov.pendingConsequences) gov.pendingConsequences=[];
+  if(!gov.fin||!gov.fin.alloc){ const a={}; GOV_FIN_LINES.forEach(l=>a[l.id]=l.base); gov.fin={alloc:a}; }
+  GOV_FIN_LINES.forEach(l=>{ if(gov.fin.alloc[l.id]===undefined) gov.fin.alloc[l.id]=l.base; });
+  if(gov.econ===undefined) gov.econ=0;
   if(!gov.traits||!gov.traits.length){ gov.traits=(gov.office==="mayor"&&gov.mayorWho==="raman")?["Grassroots energy (+1 action point/turn)","Progressive council bloc starts warmer"]:(gov.office==="mayor"&&gov.mayorWho==="bass")?["Institutional clout (+2 capital/turn)","Establishment council starts warmer"]:(gov.office==="council"?["Councilmanic prerogative in "+gov.district]:[]); }
 }
 function govLog(msg){ G.gov.log.unshift({ t:G.gov.turn, d:govDateStr(G.gov.turn), msg }); if (G.gov.log.length>140) G.gov.log.pop(); }
@@ -6319,28 +6387,27 @@ function govCampaignMeasure(id){
 }
 
 // ---- Budget ----------------------------------------------------------------
-function govStartBudget(yr){ G.gov.budget={ yr, draft:Object.assign({},G.gov.budgetAlloc) }; govLog("📋 FY"+(yr+1)+" budget season — propose your allocation (Apr 20) and adopt by Jun 1."); }
-function govBudgetAdjust(deptId, delta){
-  const gov=G.gov; if(!gov.budget) return; const d=gov.budget.draft;
-  const nv=(d[deptId]||0)+delta; if(nv<0) return;
-  const total=GOV_DEPTS.reduce((s,x)=>s+(x.id===deptId?nv:d[x.id]),0);
-  if (total>GOV_BUDGET_TOTAL){ govLog("Over budget — pull points from another department first."); render(); return; }
-  d[deptId]=nv; render();
+function govStartBudget(yr){ const gov=G.gov;
+  gov.econ=Math.max(-0.12, Math.min(0.05, (gov.econ||0)*0.5 + (Math.random()-0.55)*0.04)); // economy drifts each year
+  gov.budget={ yr, draft:Object.assign({},gov.fin.alloc), revenue:govAnnualRevenue() };
+  govLog("\ud83d\udccb FY"+(yr+1)+" budget season \u2014 propose your "+govFmtB(gov.budget.revenue)+" budget (adopt by Jun 1).");
 }
-function govBudgetAdopt(){
-  const gov=G.gov; if(!gov.budget) return;
-  const total=GOV_DEPTS.reduce((s,x)=>s+gov.budget.draft[x.id],0);
-  if (total<GOV_BUDGET_TOTAL){ /* allow underspend → padding to reserve */ gov.reserve=Math.min(20,gov.reserve+(GOV_BUDGET_TOTAL-total)*0.3); }
-  gov.budgetAlloc=Object.assign({},gov.budget.draft);
-  // approval reaction by where the money went
-  const a=gov.budgetAlloc;
-  if (a.police>=14) bumpApproval({publicSafety:+4,progressives:-3}); if(a.homeless>=14) bumpApproval({progressives:+3,homeowners:+2});
-  if (a.housing>=14) bumpApproval({renters:+4});
+function govBudgetAdjust(lineId, delta){ const gov=G.gov; if(!gov.budget) return; const d=gov.budget.draft; const nv=(d[lineId]||0)+delta; if(nv<0) return; d[lineId]=nv; render(); }
+function govBudgetAdopt(){ const gov=G.gov; if(!gov.budget) return;
+  const spend=GOV_FIN_LINES.reduce((s,l)=>s+(gov.budget.draft[l.id]||0),0)+govFinFixedTotal();
+  const balance=gov.budget.revenue-spend;
+  gov.fin.alloc=Object.assign({},gov.budget.draft);
+  gov.reserve=Math.max(0,Math.min(30, gov.reserve+(balance/gov.budget.revenue*100)));
+  if(balance<-300) bumpApproval({business:-3,labor:+2});
+  if(balance>300) bumpApproval({business:+3,labor:-2});
+  const a=gov.fin.alloc;
+  if(a.police>=3530*1.05) bumpApproval({publicSafety:+3,progressives:-2});
+  if(a.homeless>=1100) bumpApproval({progressives:+3});
+  if(a.housing>=700) bumpApproval({renters:+3});
   gov.budgetsAdopted++; gov.lastBudgetYear=gov.budget.yr; gov.budget=null; gov.capital=Math.min(100,gov.capital+5);
-  govLog("Adopted the FY budget (majority of the Council). Department targets updated.");
+  govLog("Adopted the FY budget. Balance "+(balance>=0?"+":"")+govFmtM(balance)+"; reserve now "+gov.reserve.toFixed(1)+"%.");
   render();
 }
-
 // ---- approval & dept helpers ----------------------------------------------
 function bumpApproval(obj){ const a=G.gov.approval; Object.keys(obj).forEach(k=>{ if(a[k]!==undefined) a[k]=clamp(a[k]+obj[k]); }); govRecalcOverall(); }
 function applySeg(seg,mul){ if(!seg)return; const a=G.gov.approval; Object.keys(seg).forEach(k=>{ if(a[k]!==undefined) a[k]=clamp(a[k]+seg[k]*mul); }); govRecalcOverall(); }
@@ -6372,6 +6439,11 @@ function govApplyEff(eff){
   if (eff.scandal) gov.scandalRisk=Math.max(0,gov.scandalRisk+eff.scandal);
   if (eff.reserve) gov.reserve=Math.max(0,gov.reserve+eff.reserve);
   if (eff.flag) gov.flags[eff.flag]=true;
+  if (eff.homeless && gov.city) gov.city.homelessUnsheltered=Math.max(0,gov.city.homelessUnsheltered+eff.homeless);
+  if (eff.lapd && gov.city) gov.city.lapdSworn=Math.max(7000,gov.city.lapdSworn+eff.lapd);
+  if (eff.crime && gov.city) gov.city.crimeIndex=Math.max(10,Math.min(95,gov.city.crimeIndex+eff.crime));
+  if (eff.cutKind && gov.pipelines) gov.pipelines.forEach(p=>{ if(p.kind===eff.cutKind) p.turnsLeft=Math.max(0,p.turnsLeft-3); });
+  if (eff.econ) gov.econ=Math.max(-0.15,Math.min(0.06,(gov.econ||0)+eff.econ));
 }
 function govResolveEvent(idx){
   const gov=G.gov; const ev=gov.pendingGovEvent; if(!ev) return; const ch=ev.choices[idx];
@@ -6391,7 +6463,8 @@ function govResolveEvent(idx){
 function govEndTurnTicks(){
   const gov=G.gov;
   // department health drifts toward budget-implied target
-  GOV_DEPTS.forEach(d=>{ const alloc=gov.budgetAlloc[d.id]??10; const target=Math.max(15,Math.min(90, d.base + (alloc-10)*4)); gov.deptHealth[d.id]=Math.round(gov.deptHealth[d.id]+(target-gov.deptHealth[d.id])*0.18); });
+  GOV_DEPTS.forEach(d=>{ const fl=GOV_FIN_LINES.find(x=>x.health===d.id); let target=d.base; if(fl && gov.fin && gov.fin.alloc){ const ratio=(gov.fin.alloc[fl.id]||fl.base)/fl.base; target=Math.max(15,Math.min(92, Math.round(d.base+(ratio-1)*55))); } gov.deptHealth[d.id]=Math.round(gov.deptHealth[d.id]+(target-gov.deptHealth[d.id])*0.15); });
+  if(gov.reserve<2.75){ GOV_DEPTS.forEach(d=>gov.deptHealth[d.id]=Math.max(10,gov.deptHealth[d.id]-1)); if(!gov.flags._fiscalWarned){ gov.flags._fiscalWarned=true; govLog("\u26a0 Reserve below the 2.75% floor \u2014 services strained; fiscal-emergency risk."); } } else gov.flags._fiscalWarned=false;
   // neglected departments hurt their segment + raise crisis odds
   let neglect=0;
   GOV_DEPTS.forEach(d=>{ if(gov.deptHealth[d.id]<35){ neglect++; const a=gov.approval; if(a[d.seg]!==undefined){ a[d.seg]=clamp(a[d.seg]-1); } } });
@@ -6459,6 +6532,17 @@ function govPolicyEffect(billId){
     case "unarmedresponse": govStartPipeline({id:"unarmed",label:"Unarmed response",kind:"safety",mag:1,turnsLeft:24}); break;
     case "sb79delay": c.housingPipeline=Math.max(0,c.housingPipeline-1500); break;
     case "austerity": gov.reserve=Math.min(20,gov.reserve+3); break;
+    case "ed1codify": govStartPipeline({id:"ed1",label:"ED1 affordable streamlining",kind:"housing",mag:380,affShare:0.9,turnsLeft:24,fundRisk:0.04}); c.housingPipeline+=4000; govPlantConsequence(6,"ed1_court"); break;
+    case "ulaexpand": govStartPipeline({id:"ula",label:"ULA-funded housing",kind:"housing",mag:120,affShare:1.0,turnsLeft:30}); govStartPipeline({id:"ulaprotect",label:"ULA eviction defense",kind:"protect",mag:40,turnsLeft:30}); break;
+    case "anticamp4118": govStartPipeline({id:"e4118",label:"41.18 enforcement",kind:"sweep",mag:260,turnsLeft:16}); break;
+    case "evictiondefense": govStartPipeline({id:"evict",label:"Eviction defense",kind:"protect",mag:70,turnsLeft:30}); break;
+    case "strcrackdown": govStartPipeline({id:"str",label:"STR enforcement",kind:"protect",mag:30,turnsLeft:20}); c.housingPipeline+=300; break;
+    case "grydfund": govStartPipeline({id:"gryd",label:"GRYD gang prevention",kind:"safety",mag:1,turnsLeft:30}); break;
+    case "copliability": govStartPipeline({id:"coplia",label:"Police oversight",kind:"safety",mag:1,turnsLeft:20}); break;
+    case "dwpclean": gov.deptHealth.dwp=Math.min(100,gov.deptHealth.dwp+5); break;
+    case "metrotransit": gov.deptHealth.transport=Math.min(100,gov.deptHealth.transport+5); break;
+    case "budgetstab": gov.reserve=Math.min(25,gov.reserve+4); break;
+    case "parksbond": gov.reserve=Math.max(0,gov.reserve-2); break;
     default: break;
   }
 }
@@ -6709,23 +6793,30 @@ function govViewCouncil(){
 
 function govViewBudget(){
   const gov=G.gov;
-  if (!gov.budget){
-    const rows=GOV_DEPTS.map(d=>`<div class="small" style="display:flex;justify-content:space-between;padding:2px 0"><span>${d.name} <span style="color:var(--muted)">(${gov.budgetAlloc[d.id]} pts)</span></span><b style="color:${govColor(gov.deptHealth[d.id])}">health ${gov.deptHealth[d.id]}</b></div>`).join("");
-    return `<div class="panel"><h3>Budget — no cycle pending</h3><p class="small">FY runs Jul 1–Jun 30: Mayor submits by <b>Apr 20</b>, Council adopts (majority 8) by <b>Jun 1</b>. Current allocation & department health:</p>${rows}<p class="small" style="margin-top:6px">Reserve fund: <b>${gov.reserve.toFixed(1)}%</b> (2.75% legal floor) · Budgets adopted: <b>${gov.budgetsAdopted}</b>. The next cycle opens each spring.</p></div>`;
+  if(!gov.budget){
+    const rows=GOV_FIN_LINES.map(l=>`<div class="small" style="display:flex;justify-content:space-between;padding:2px 0"><span>${l.name}</span><span><b>${govFmtM(gov.fin.alloc[l.id]||l.base)}</b>${l.health?` <span style="color:${govColor(gov.deptHealth[l.health])}">\u00b7 health ${gov.deptHealth[l.health]}</span>`:''}</span></div>`).join("");
+    return `<div class="panel"><h3>Budget \u2014 no cycle pending</h3>
+      <p class="small">LA's fiscal year runs Jul 1\u2013Jun 30: the Mayor submits a proposed budget by <b>Apr 20</b>, the Council adopts by <b>Jun 1</b>. Projected total ~<b>${govFmtB(govAnnualRevenue())}</b>. Reserve: <b>${gov.reserve.toFixed(1)}%</b> (2.75% emergency floor). Budgets adopted: <b>${gov.budgetsAdopted}</b>. Current allocations:</p>
+      ${rows}
+      <p class="small" style="color:var(--muted);margin-top:6px">Fixed/locked: ${GOV_FIN_FIXED.map(f=>f.name+" "+govFmtM(f.amt)).join(" \u00b7 ")}. The next cycle opens each spring.</p></div>`;
   }
-  const d=gov.budget.draft; const total=GOV_DEPTS.reduce((s,x)=>s+d[x.id],0); const free=GOV_BUDGET_TOTAL-total;
-  const rows=GOV_DEPTS.map(dp=>{ const target=Math.max(15,Math.min(90,dp.base+(d[dp.id]-10)*4));
-    const minus=d[dp.id]<=0?'disabled':''; const plus=free<=0?'disabled':'';
-    return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><span class="small" style="width:150px">${dp.name}</span>
-      <button class="btn small" onclick="govBudgetAdjust('${dp.id}',-1)" ${minus}>-</button><b style="width:24px;text-align:center">${d[dp.id]}</b><button class="btn small" onclick="govBudgetAdjust('${dp.id}',1)" ${plus}>+</button>
-      <span class="small" style="color:var(--muted)">\u2192 health target ~${target} (now ${gov.deptHealth[dp.id]})</span></div>`; }).join("");
-  return `<div class="panel"><h3>FY${gov.budget.yr+1} budget \u2014 ${GOV_BUDGET_TOTAL} points</h3>
-    <p class="small">${gov.office==="mayor"?"You propose; the Council adopts by majority.":"The Mayor proposed; you shape adoption."} <b>Unallocated: <span style="color:${free>0?'var(--accent)':'var(--muted)'}">${free}</span></b> ${free<=0?'<span class="small" style="color:var(--warn)">\u2014 it\u2019s a fixed pie: reduce a department (\u2212) to free points, then add (+) elsewhere.</span>':'<span class="small">\u2014 assign to priorities with (+).</span>'}</p>
-    ${rows}
-    <div class="row" style="margin-top:10px"><button class="btn primary" onclick="govBudgetAdopt()">Adopt budget${free>0?` (${free} \u2192 reserve)`:''}</button></div>
-    <p class="small" style="margin-top:6px;color:var(--muted)">Real context: FY26-27 ~$14.9B, ~$25M gap after last year\u2019s ~$1B deficit.</p></div>`;
+  const d=gov.budget.draft; const spend=GOV_FIN_LINES.reduce((s,l)=>s+(d[l.id]||0),0)+govFinFixedTotal(); const balance=gov.budget.revenue-spend;
+  const revRows=GOV_FIN_REVENUE.map(r=>{ const amt=Math.round(r.amt*(1+(gov.econ||0)*(0.5+r.vol*8))); const tag=r.vol>=0.2?' <span style="color:var(--warn)">volatile</span>':r.vol<=0.04?' <span style="color:var(--good)">stable</span>':''; return `<div class="small" style="display:flex;justify-content:space-between"><span>${r.name}${tag}</span><b>${govFmtM(amt)}</b></div>`; }).join("");
+  const spendRows=GOV_FIN_LINES.map(l=>{ const v=d[l.id]||0; const hc=l.health?` <span style="color:${govColor(gov.deptHealth[l.health])}">h${gov.deptHealth[l.health]}</span>`:''; const tag=v>l.base*1.03?'<span style="color:var(--good)">\u25b2</span>':v<l.base*0.97?'<span style="color:var(--bad)">\u25bc</span>':'';
+    return `<div style="display:flex;align-items:center;gap:6px;margin:3px 0"><span class="small" style="width:210px">${l.name}${hc}</span>
+      <button class="btn small" onclick="govBudgetAdjust('${l.id}',-50)">\u2212</button><b style="width:74px;text-align:center">${govFmtM(v)}</b><button class="btn small" onclick="govBudgetAdjust('${l.id}',50)">+</button> ${tag}</div>`; }).join("");
+  const balColor=balance<0?'var(--bad)':'var(--good)';
+  return `<div class="grid cols-2" style="gap:12px">
+    <div class="panel"><h3>FY${gov.budget.yr+1} \u2014 spending ($50M steps)</h3><p class="small">Fund a department above baseline to raise its health (and city outcomes); underfund it and it starves.</p>${spendRows}
+      <div class="small" style="margin-top:8px;color:var(--muted)">+ fixed/locked: ${govFmtM(govFinFixedTotal())}</div></div>
+    <div class="panel"><h3>Revenue & balance</h3>${revRows}
+      <div style="height:1px;background:var(--line);margin:6px 0"></div>
+      <div class="small" style="display:flex;justify-content:space-between"><span>Total revenue</span><b>${govFmtM(gov.budget.revenue)}</b></div>
+      <div class="small" style="display:flex;justify-content:space-between"><span>Total spending</span><b>${govFmtM(spend)}</b></div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;margin-top:4px"><span>Balance</span><b style="color:${balColor}">${balance>=0?'+':''}${govFmtM(balance)}</b></div>
+      <p class="small" style="margin-top:6px">Surplus builds the reserve; a deficit draws it down (now <b>${gov.reserve.toFixed(1)}%</b>, 2.75% floor \u2014 below it risks a fiscal emergency).</p>
+      <button class="btn primary" style="margin-top:6px" onclick="govBudgetAdopt()">Adopt budget</button></div></div>`;
 }
-
 function govViewAppointments(){
   const gov=G.gov;
   let pending = gov.pendingConfirm? `<div class="panel" style="margin-bottom:10px"><h3>Awaiting Council confirmation</h3>

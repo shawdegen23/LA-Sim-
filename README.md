@@ -213,3 +213,18 @@ Grounded in the real, near-final June 2026 results and the actual LA City Charte
 - **The real budget cycle** — a spring budget decision every year (Apr 20 propose -> Jun 1 adopt).
 - **Three win vectors** — pass an agenda, hold approval to win re-election, survive the crises. Your end-of-term **legacy score** blends all three.
 
+---
+
+## Governing Mode v3 — A real city engine
+
+Governing is now a simulation with consequences, not a menu of one-off buttons.
+
+- **Live city-state engine.** The city carries real metrics — homelessness (sheltered/unsheltered), affordable & total homes built, LAPD sworn, a crime index — that evolve every turn. Do nothing and things drift worse; act and they respond, gradually.
+- **Lagged, contingent, fallible pipelines.** Passing SB 79, Inside Safe, LAPD hiring, ED1, etc. feeds multi-year pipelines that deliver over months, cost money, can be **cut by the Council/County/State/feds**, and carry **court/audit reversal risk** (the real ED1 lawsuits and Inside Safe audit show up as delayed events). Inside Safe houses people gradually with a ~40% return-to-street rate.
+- **Outcomes dashboard.** Live trend lines for homelessness, crime, homes built, and LAPD staffing, each with a green/red trend arrow.
+- **Real-dollar budget.** Actual revenue sources (property, business, UUT, sales, volatile hotel tax…) that move with the economy, department spending in millions, fixed/locked costs, a live balance/deficit meter, and a reserve fund. Funding a department raises its health (and its outcomes); underfunding starves it; a deficit drives the reserve below the 2.75% floor into a **fiscal emergency** that hits every service.
+- **31 real bills and 29 real events** drawn from current LA: ED1 codification, Measure ULA defense/repeal, 41.18 sweeps, oil-drilling phase-out, the Olympic wage, sanctuary protections, the DWP reservoir liability, HUD freezes, the County pulling LAHSA funds, ICE raids on vendors, heat waves, the Palisades insurance crisis, and more.
+- **Mayor traits & the CD4 vacancy.** Raman: +1 action point and a warmer progressive bloc. Bass: +2 political capital/turn and a warmer establishment. If you play Mayor Raman, fill the vacated CD4 seat under Charter §409 (caretaker, moderate, or a special election).
+
+See `LA_RESEARCH_V3.md` for the sourced data and design behind the engine.
+
