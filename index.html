@@ -6139,22 +6139,22 @@ function govWhip(billId){
   govLog("Whipped votes on “"+govBill(billId).title+"” — leaned on "+persuadable.map(x=>x.m.dist).join(", ")+".");
   render();
 }
-function govCommitteePush(billId){
-  const gov=G.gov; const ini=gov.initiatives.find(i=>i.billId===billId); if(!ini||ini.stage!=="committee") return;
-  const b=govBill(billId); const c=govBillComm(b);
-  const chair=govMember(c.chair); const chairLean=govMemberLean(chair,b);
+function govCommitteeInfo(billId){
+  const gov=G.gov; const b=govBill(billId); const c=govBillComm(b); const chair=govMember(c.chair); const chairLean=govMemberLean(chair,b);
   const iChair = gov.office==="council" && c.chair===gov.district;
   const iMember = gov.office==="council" && c.members.includes(gov.district);
-  // cost depends on chair hostility
-  let cost = iChair?0 : iMember?4 : chairLean>=50?3 : chairLean>=40?7 : 11;
-  if (gov.capital<cost){ govLog("The "+c.name+" chair ("+chair.dist+") is bottling this up — need "+cost+" capital to force it out."); render(); return; }
+  const cost = iChair?0 : iMember?4 : chairLean>=50?3 : chairLean>=40?7 : 10;
+  const posture = chairLean>=50?"friendly":chairLean>=40?"cool":"hostile";
+  return {b,c,chair,chairLean,iChair,iMember,cost,posture};
+}
+function govCommitteePush(billId){
+  const gov=G.gov; const ini=gov.initiatives.find(i=>i.billId===billId); if(!ini||ini.stage!=="committee") return;
+  const info=govCommitteeInfo(billId);
+  if (gov.capital<info.cost){ govLog("The "+info.c.name+" chair ("+info.chair.dist+") is bottling this up \u2014 need "+info.cost+" capital to force it out (you have "+gov.capital+")."); render(); return; }
   if (!govSpendAP(1)){ render(); return; }
-  gov.capital-=cost;
-  // committee vote among members (with whip)
-  let cy=0; c.members.forEach(d=>{ const m=govMember(d); if(!m||m.vacant)return; if(gov.office==="council"&&d===gov.district){cy++;return;} if(govMemberScore(m,ini)>=48)cy++; });
-  const need=Math.ceil(c.members.length/2);
-  if (cy>=need || iChair){ ini.stage="floor"; ini.reported=true; govLog("“"+b.title+"” REPORTED OUT of "+c.name+" ("+cy+"/"+c.members.length+") → full Council."); }
-  else { govLog("“"+b.title+"” stuck in "+c.name+" ("+cy+"/"+c.members.length+"). Whip the committee or trade favors and try again."); }
+  gov.capital-=info.cost;
+  ini.stage="floor"; ini.reported=true;
+  govLog("\u201c"+info.b.title+"\u201d reported out of "+info.c.name+(info.cost?" (spent "+info.cost+" capital to move a "+info.posture+" chair)":"")+" \u2192 full Council.");
   render();
 }
 function govFloorVote(billId){
@@ -6495,9 +6495,19 @@ function govViewLegislation(){
       const you=gov.office==="council"&&m.dist===gov.district; const p=you?"yes":govPredict(m,ini);
       const col=p==="yes"?'var(--good)':p==="lean"?'var(--warn)':'var(--bad)';
       return `<span class="govchip" title="${escapeHtml(m.name)}" style="border-color:${col};color:${col}">${m.dist.replace('CD','')}${you?'*':''}</span>`; }).join("");
-    let controls = ini.stage==="committee"
-      ? `<button class="btn small" onclick="govWhip('${b.id}')">Whip (−1AP,−8cap)</button> <button class="btn small primary" onclick="govCommitteePush('${b.id}')">Report out of committee</button>`
-      : `<button class="btn small" onclick="govWhip('${b.id}')">Whip (−1AP,−8cap)</button> <button class="btn small primary" onclick="govFloorVote('${b.id}')">Call the vote</button>`;
+    let controls;
+    if (ini.stage==="committee"){
+      const info=govCommitteeInfo(b.id);
+      const canReport = gov.capital>=info.cost && gov.ap>=1;
+      const canWhip = gov.capital>=8 && gov.ap>=1;
+      controls = `<button class="btn small" onclick="govWhip('${b.id}')" ${canWhip?'':'disabled'}>Whip votes (-1AP, -8cap)</button> `
+        + `<button class="btn small primary" onclick="govCommitteePush('${b.id}')" ${canReport?'':'disabled'}>Report out of committee (-${info.cost} cap)</button>`
+        + (gov.capital<info.cost ? `<div class="small" style="color:var(--warn);margin-top:4px">Chair ${info.chair.dist} is ${info.posture} \u2014 need ${info.cost} capital to force it out (you have ${gov.capital}). Build capital with town halls / favors, or Advance to regenerate.</div>` : (gov.ap<1?`<div class="small" style="color:var(--warn);margin-top:4px">No AP left this turn \u2014 Advance 2 weeks.</div>`:''));
+    } else {
+      const canWhip = gov.capital>=8 && gov.ap>=1;
+      controls = `<button class="btn small" onclick="govWhip('${b.id}')" ${canWhip?'':'disabled'}>Whip votes (-1AP, -8cap)</button> `
+        + `<button class="btn small primary" onclick="govFloorVote('${b.id}')" ${gov.ap>=1?'':'disabled'}>Call the vote</button>`;
+    }
     return `<div class="panel" style="margin:8px 0"><b>${escapeHtml(b.title)}</b> <span class="small">· CF ${ini.fileNo} · ${stageLabel}</span>
       <p class="small">${escapeHtml(b.desc)}</p>
       <div class="small" style="margin:4px 0">Whip count: <b>${yes}/15</b> (needs ${b.threshold}) ${yes>=b.threshold?'<span style="color:var(--good)">— passing</span>':'<span style="color:var(--bad)">— short</span>'}</div>
