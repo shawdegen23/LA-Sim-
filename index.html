@@ -6429,7 +6429,8 @@ function renderGovSetup(){
 }
 
 function govRehydrateDeptHeads(){ const gov=G.gov; if(!gov||!gov.appointments) return; gov.appointments.filter(a=>a.status==="confirmed").forEach(a=>{ const d=govDept(a.dept); if(d) d.head=a.name; }); }
-function renderGov(){ govEnsure(); govApplyMemberMeta(); govRehydrateDeptHeads(); if(G.gov.pendingGovEvent){ renderGovShell(); renderGovEventModal(); return; } renderGovShell(); }
+function govClearModals(){ try{ var ms=document.querySelectorAll(".modal-back"); for(var i=0;i<ms.length;i++){ if(ms[i].parentNode) ms[i].parentNode.removeChild(ms[i]); } }catch(e){} }
+function renderGov(){ govEnsure(); govApplyMemberMeta(); govRehydrateDeptHeads(); govClearModals(); if(G.gov.pendingGovEvent){ renderGovShell(); renderGovEventModal(); return; } renderGovShell(); }
 function govTab(t){ G.gov.activeTab=t; render(); }
 
 function renderGovShell(){
@@ -6618,6 +6619,7 @@ function govViewRecord(){
 
 function renderGovEventModal(){
   const ev=G.gov.pendingGovEvent; if(!ev) return;
+  govClearModals();
   const wrap=document.createElement("div"); wrap.className="modal-back";
   wrap.innerHTML=`<div class="modal"><h2>${escapeHtml(ev.title)}</h2><p>${escapeHtml(ev.body)}</p>
     <div style="margin-top:12px">${ev.choices.map((c,i)=>`<button class="btn" style="display:block;width:100%;text-align:left;margin:6px 0" onclick="govResolveEvent(${i})">${escapeHtml(c.label)}</button>`).join("")}</div></div>`;
