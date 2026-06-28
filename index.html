@@ -6583,21 +6583,32 @@ function govViewDistrict(){
 }
 function govViewCitywide(){
   const gov=G.gov;
-  return `<div class="panel"><h3>Executive directives</h3><p class="small">As Mayor you can issue binding directives (effective 15 days after publication). Pick a focus this turn:</p>
-    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
-      <button class="btn small" onclick="govDirective('safety')">Speed LAPD hiring</button>
-      <button class="btn small" onclick="govDirective('homeless')">Inside Safe surge</button>
-      <button class="btn small" onclick="govDirective('permit')">Cut permitting red tape</button>
-      <button class="btn small" onclick="govDirective('climate')">Climate/DWP resilience</button></div>
-    <p class="small" style="margin-top:8px">Each costs 1 AP and shifts a department's health and the related bloc.</p></div>`;
+  const order=["safety","homeless","permit","climate"];
+  const rows=order.map(k=>{ const m=GOV_DIRECTIVES[k]; const h=gov.deptHealth[m.dept];
+    return `<div class="panel" style="margin:8px 0;padding:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b>${m.label}</b><span class="small">${govDept(m.dept).name} health <b style="color:${govColor(h)}">${h}</b></span></div>
+      <div style="height:7px;background:var(--panel2);border-radius:4px;overflow:hidden;margin:6px 0"><div style="height:100%;width:${h}%;background:${govColor(h)}"></div></div>
+      <div class="small" style="color:var(--muted);margin-bottom:7px">${m.eff}</div>
+      <button class="btn small" onclick="govDirective('${k}')" ${gov.ap<1?'disabled':''}>Issue directive (\u22121 AP)</button>
+    </div>`; }).join("");
+  const last=gov.lastDirective?`<p class="small" style="color:var(--good)">\u2714 Last directive: ${escapeHtml(gov.lastDirective.label)} \u2014 +${gov.lastDirective.gain} ${escapeHtml(gov.lastDirective.dept)} health (${govDateStr(gov.lastDirective.turn)}).</p>`:"";
+  return `<div class="panel" style="margin-bottom:10px"><h3>Executive directives</h3>
+    <p class="small">Your directives are binding on departments (effective 15 days after publication). Each costs 1 AP and visibly raises that department\u2019s health \u2014 with diminishing returns as it gets healthier \u2014 plus shifts the related voter bloc. ${gov.ap<1?'<span style="color:var(--warn)">No AP left this turn \u2014 Advance 2 weeks to refresh.</span>':''}</p>
+    ${last}</div>${rows}`;
 }
-function govDirective(kind){ if(!govSpendAP(1))return render(); const gov=G.gov;
-  if(kind==="safety"){ applyDept({police:+5},1); bumpApproval({publicSafety:+3,progressives:-2}); govLog("Executive Directive: speed LAPD hiring."); }
-  if(kind==="homeless"){ applyDept({homeless:+5},1); bumpApproval({progressives:+2,homeowners:+2}); govLog("Executive Directive: Inside Safe surge."); }
-  if(kind==="permit"){ applyDept({planning:+5},1); bumpApproval({business:+3,homeowners:+2}); govLog("Executive Directive: cut permitting red tape."); }
-  if(kind==="climate"){ applyDept({dwp:+5},1); bumpApproval({progressives:+2,overall:+1}); govLog("Executive Directive: climate/DWP resilience."); }
+const GOV_DIRECTIVES={
+  safety:{dept:"police", seg:{publicSafety:3,progressives:-2}, label:"Speed LAPD hiring", eff:"+LAPD health \u00b7 +public-safety \u00b7 \u2212progressives"},
+  homeless:{dept:"homeless", seg:{progressives:2,homeowners:2}, label:"Inside Safe surge", eff:"+Homelessness health \u00b7 +progressives & homeowners"},
+  permit:{dept:"planning", seg:{business:3,homeowners:2}, label:"Cut permitting red tape", eff:"+Planning health \u00b7 +business & homeowners"},
+  climate:{dept:"dwp", seg:{progressives:2,overall:1}, label:"Climate / DWP resilience", eff:"+DWP health \u00b7 +progressives"},
+};
+function govDirective(kind){ const m=GOV_DIRECTIVES[kind]; if(!m) return render(); if(!govSpendAP(1)) return render(); const gov=G.gov;
+  const gain=Math.max(1, Math.round(6*(1-gov.deptHealth[m.dept]/100)+2));
+  gov.deptHealth[m.dept]=clamp(gov.deptHealth[m.dept]+gain);
+  bumpApproval(m.seg);
+  gov.lastDirective={ turn:gov.turn, label:m.label, dept:govDept(m.dept).name, gain };
+  govLog("Executive Directive: "+m.label+" (+"+gain+" "+govDept(m.dept).name+" health).");
   render(); }
-
 function govViewMeasures(){
   const gov=G.gov;
   const onBallot=gov.measures.filter(m=>m.result===null).map(m=>{ const meas=GOV_MEASURES.find(x=>x.id===m.id);
