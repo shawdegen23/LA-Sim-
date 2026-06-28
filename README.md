@@ -196,3 +196,20 @@ Neighborhoods: Wikipedia [CD1](https://en.wikipedia.org/wiki/Los_Angeles%27s_1st
 Pollsters: [Tulchin Research](https://tulchinresearch.com/), [FM3 Research](https://fm3research.com/).
 Consulting archetypes: [Bearstar Strategies](https://bearstarstrategies.com/team/), [North Star Alliances](https://www.northstaralliances.com/about-us).
 Endorsements: [LA Fed](https://thelafed.org/resource/lalaborvoterguide/), [UTLA](https://utla.net/campaigns/2026-endorsements/), [LA Forward](https://www.laforward.org/endorsements).
+
+---
+
+## Part 2 — In Office (Governing Mode)
+
+A second way to play, from the title screen via **"Start sworn in — Govern (2027)."** Instead of campaigning, you take office on **December 14, 2026** (the real second-Monday-of-December term start) as either the **Mayor** or a **City Councilmember**, and govern a four-year term in **biweekly turns** to re-election in November 2030.
+
+Grounded in the real, near-final June 2026 results and the actual LA City Charter (see `GOVERNANCE_REFERENCE.md`):
+
+- **Real 2027 council** — all 15 seats with the actual members (six odd-seat incumbents re-elected; CD3 & CD9 open-seat runoffs you resolve; even seats carried from 2024), each with an ideology vector that drives realistic coalition behavior.
+- **Real thresholds** — ordinances pass at **8 of 15**, veto overrides at **10**, urgency/charter items at **12**. The progressive/DSA bloc is a minority you must build past.
+- **The mayoral cliffhanger** — Bass vs Raman went to a November runoff; you choose the winner. Pick **Mayor Raman** and CD4 goes vacant under Charter §409.
+- **Legislation pipeline** — introduce real 2026–27 bills (SB 79 upzoning, Inside Safe, LAPD hiring, RSO, councilmanic-prerogative reform, council expansion, LA28, wildfire rebuild, the budget), move them through committee, **whip votes with political capital**, then face the mayor's veto / council override.
+- **Biweekly events** — realistic, often action-triggered: encampment fights, developer pay-to-play (with a Huizar-style federal-probe risk), labor strikes, LAPD controversies, state preemption, budget shortfalls, Olympics logistics, wildfire recovery.
+- **The real budget cycle** — a spring budget decision every year (Apr 20 propose -> Jun 1 adopt).
+- **Three win vectors** — pass an agenda, hold approval to win re-election, survive the crises. Your end-of-term **legacy score** blends all three.
+
